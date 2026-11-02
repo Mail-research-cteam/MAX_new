@@ -1292,8 +1292,8 @@
     if (fromDraft) $('#flDraft').hidden = false;
     MaxAuthor.install(bundle, function(){ return clone(S); }, function(next){ snapshot(); S=clone(next); clearTimers(); buildGraph(); renderChrome(); restart(); save(); }, function(key,target){ snapshot(); setTarget(key,target); buildGraph(); syncPreview(); save(); });
     window.addEventListener('pagehide', function(){ if(saveTimer) flushDraft(); });
-    $('#flDownload').textContent='Скачать HTML';
-    if(!window.MaxStandalone){var zipButton=document.createElement('button');zipButton.className='fl-t';zipButton.textContent='Скачать комплект ZIP';zipButton.onclick=function(){MaxAuthor.exportBundle(bundle,S);};$('.fl-bar').append(zipButton);}
+    $('#flDownload').textContent='HTML';
+    if(!window.MaxStandalone){var zipButton=document.createElement('button');zipButton.className='fl-t';zipButton.textContent='Комплект ZIP';zipButton.onclick=function(){MaxAuthor.exportBundle(bundle,S);};$('.fl-bar').append(zipButton);}
     MaxEditorUI.install();updateHistory();
 
     $$('[data-add]').forEach(function(b){b.addEventListener('click',function(){addNode(b.getAttribute('data-add'));});});

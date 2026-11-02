@@ -89,7 +89,8 @@ window.MaxEditorUI={
     document.addEventListener('wheel',e=>{if(document.body.classList.contains('is-editing')&&(e.ctrlKey||e.metaKey)&&e.target.closest('.app'))e.preventDefault();},{capture:true,passive:false});
     const bar=document.querySelector('.fl-bar'),flow=document.getElementById('flow');bar.classList.add('editor-toolbar');
     bar.querySelector('b')?.remove();bar.querySelectorAll('.fl-sep,.fl-grow').forEach(el=>el.remove());
-    const removed=['Сохранить версию + JSON','Импорт JSON / HTML','Скачать комплект ZIP','Открыть сохранённую версию','Предыдущая сохранённая','Файловая версия'];
+    const removed=['Сохранить версию + JSON','Импорт JSON / HTML','Комплект ZIP','Открыть сохранённую версию','Предыдущая сохранённая','Файловая версия'];
+    const hiddenCommands=new Set(['Сохранить версию + JSON','Импорт JSON / HTML','Открыть сохранённую версию']);
     const commands=[...bar.querySelectorAll('button')].filter(b=>removed.includes(b.textContent.trim()));commands.forEach(b=>b.remove());const source=document.querySelector('.author-source');source?.remove();
     const context=document.createElement('div');context.className='editor-context';context.append(bar.querySelector('.author-select'));
     const modes=document.createElement('div');modes.className='editor-segments';modes.setAttribute('role','radiogroup');modes.setAttribute('aria-label','Отображение редактора');
@@ -101,7 +102,7 @@ window.MaxEditorUI={
     const scenarioSelect=context.querySelector('select'),currentScenario=scenarioSelect.value,chooseScenario=scenarioSelect.onchange;
     if(scenario){scenarioSelect.add(new Option('Новый сценарий',':new:'));
     scenarioSelect.onchange=()=>{if(scenarioSelect.value===':new:'){scenarioSelect.value=currentScenario;scenario.click();}else chooseScenario();};}
-    if(!window.MaxStandalone)this.scenarioDropdown(scenarioSelect,context,commands,source);
+    if(!window.MaxStandalone)this.scenarioDropdown(scenarioSelect,context,commands.filter(button=>!hiddenCommands.has(button.textContent.trim())));
     scenario?.remove();
     const actions=document.createElement('div');actions.className='editor-actions';
     const undo=document.getElementById('flUndo');this.iconButton(undo,'undo','Отменить — Ctrl+Z / Cmd+Z');

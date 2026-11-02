@@ -30,7 +30,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   await target.fill(value);await target.blur();
   assert.equal(await offline.locator('body > nav').count(),0);
   assert.equal(await editor.locator('.editor-context,.scenario-trigger,.scenario-options').count(),0);
-  assert.equal(await editor.getByRole('button',{name:'Скачать HTML',exact:true}).count(),1);
+  assert.equal(await editor.getByRole('button',{name:'HTML',exact:true}).count(),1);
   assert.equal(await editor.locator('#authorStatus').isVisible(),false);
   await editor.locator('[data-view=preview]').click();
   const layout=await editor.locator('.editor-toolbar').evaluate(bar=>({bottom:bar.getBoundingClientRect().bottom,appTop:document.querySelector('.app').getBoundingClientRect().top,background:getComputedStyle(bar).backgroundColor,canvasBackground:getComputedStyle(document.querySelector('#flow')).backgroundColor}));

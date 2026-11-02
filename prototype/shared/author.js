@@ -74,7 +74,7 @@ window.MaxAuthor = (() => {
     for(const [id,title] of choices){const o=new Option(title,id);o.selected=id===b.id;select.add(o);}bar.prepend(select);
     select.onchange=()=>{navigate('index.html?scenario='+encodeURIComponent(select.value)+'&edit=1');};
     button('Сохранить версию + JSON',()=>saveBundle(b,get()));
-    const jsonDownload=button('Скачать JSON',()=>{const next=envelope({...b,scenario:get()});download(b.id+'.json',JSON.stringify(next,null,2),'application/json');});jsonDownload.id='flDownloadJSON';jsonDownload.classList.add('fl-t--primary');
+    const jsonDownload=button('JSON',()=>{const next=envelope({...b,scenario:get()});download(b.id+'.json',JSON.stringify(next,null,2),'application/json');});jsonDownload.id='flDownloadJSON';jsonDownload.classList.add('fl-t--primary');
     if(!window.MaxStandalone)button('Новый вариант',()=>{
       const id=prompt('ID нового варианта: латинские буквы, цифры, дефис',b.id+'-variant');if(!id)return;
       if(!MaxSafety.identifier(id))throw Error('Допустимы латинские буквы, цифры, дефис и подчёркивание');
