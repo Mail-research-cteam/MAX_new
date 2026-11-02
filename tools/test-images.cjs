@@ -1,0 +1,5 @@
+'use strict';
+// Synthetic, metadata-free images: no research images or people in public test fixtures.
+const fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib'),{crc32}=require('./zip-utils.cjs');
+function png(w,h){const raw=Buffer.alloc((w*4+1)*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*(w*4+1)+1+x*4;raw[i]=Math.round(x/w*240);raw[i+1]=Math.round(y/h*220);raw[i+2]=180;raw[i+3]=255;}const chunk=(name,data)=>{const type=Buffer.from(name),out=Buffer.alloc(data.length+12);out.writeUInt32BE(data.length);type.copy(out,4);data.copy(out,8);out.writeUInt32BE(crc32(Buffer.concat([type,data])),out.length-4);return out;};const head=Buffer.alloc(13);head.writeUInt32BE(w);head.writeUInt32BE(h,4);head[8]=8;head[9]=6;return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',head),chunk('IDAT',zlib.deflateSync(raw)),chunk('IEND',Buffer.alloc(0))]);}
+module.exports=()=>{const dir=path.resolve(__dirname,'fixtures');fs.mkdirSync(dir,{recursive:true});for(const [name,w,h]of [['message-banner',980,540],['message-portrait',403,554]])fs.writeFileSync(path.join(dir,name+'.png'),png(w,h));};

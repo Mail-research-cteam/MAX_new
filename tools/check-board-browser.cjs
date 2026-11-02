@@ -1,0 +1,41 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {chromium}=require('./browser.cjs');
+const root=path.resolve(__dirname,'..'),base='http://127.0.0.1:8000/prototype/';
+(async()=>{
+const browser=await chromium.launch({headless:true});
+try{
+ const context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true});const p=await context.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ const ui=require('./board-test-helpers.cjs')(p);
+ async function open(id){await p.goto(base+'index.html?scenario='+id+'&edit=1');await p.locator('#boardZoom').waitFor();await p.waitForTimeout(300);}
+ async function transform(){return p.locator('#flLayer').evaluate(el=>{const m=new DOMMatrix(getComputedStyle(el).transform);return {z:m.a,x:m.e,y:m.f};});}
+ async function state(id='owner'){await p.waitForTimeout(400);return p.evaluate(id=>{const key=Object.keys(localStorage).find(k=>k.startsWith('max-draft:1:')&&k.endsWith(':'+id+':1'));return key?JSON.parse(localStorage.getItem(key)):null;},id);}
+ async function wheel(dx,dy,alt=false){if(!alt)return ui.pan(-dx,-dy);await p.locator('#flView').evaluate((el,a)=>{const r=el.getBoundingClientRect();el.dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,clientX:r.left+150,clientY:r.top+150,deltaX:a.dx,deltaY:a.dy,altKey:true}));},{dx,dy});}
+ await open('owner');assert.equal(await p.locator('.fl-node').count(),30);assert.match(await p.locator('#boardZoom').textContent(),/%/);console.log('PASS owner board loads');
+ const hit=await p.locator('#flLayer').evaluate(layer=>{const v=document.getElementById('flView').getBoundingClientRect();for(const el of layer.querySelectorAll('.edge-hit'))for(let f=.15;f<.9;f+=.1){const q=el.getPointAtLength(el.getTotalLength()*f),m=el.getScreenCTM(),pt=new DOMPoint(q.x,q.y).matrixTransform(m);if(pt.x>v.left+20&&pt.x<v.right-20&&pt.y>v.top+20&&pt.y<v.bottom-20&&document.elementFromPoint(pt.x,pt.y)?.dataset.edge===el.dataset.edge&&[...layer.querySelectorAll('.fl-port--out,.edge-end-hit')].every(h=>{const r=h.getBoundingClientRect();return Math.hypot(pt.x-r.x-r.width/2,pt.y-r.y-r.height/2)>26;}))return {x:pt.x,y:pt.y,key:el.dataset.edge};}return null;});assert(hit);await p.mouse.click(hit.x,hit.y);assert.equal(await p.locator('#boardEdgeList').inputValue(),hit.key);await p.keyboard.press('Escape');assert.equal(await p.locator('#boardEdgeList').inputValue(),'');console.log('PASS selecting visible line by mouse and Escape deselection');
+ const previewBefore=await p.locator('.app').boundingBox();let t=await transform();await wheel(80,120);let next=await transform();assert.equal(next.z,t.z);assert(Math.abs(next.x-(t.x-80))<.01);assert(Math.abs(next.y-(t.y-120))<.01);await wheel(0,-200,true);next=await transform();assert(next.z>t.z);assert.deepEqual(await p.locator('.app').boundingBox(),previewBefore);console.log('PASS board pan/zoom isolated from preview');
+ const browserZoom=await p.locator('#flView').evaluate(el=>{const e=new WheelEvent('wheel',{ctrlKey:true,cancelable:true,bubbles:true,deltaY:10});el.dispatchEvent(e);return e.defaultPrevented;});assert.equal(browserZoom,true);
+ await ui.zoomTo(1);assert.equal((await transform()).z,1);
+ // Scroll text without moving or zooming the board.
+ const area=p.locator('[data-path="nodes.greet.text"]');await area.fill(('Описание настройки совместного доступа и подтверждения участника.\n').repeat(32));t=await transform();await area.evaluate(el=>{el.scrollTop=0;el.dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:90}));});assert.deepEqual(await transform(),t);
+ // Keyboard connection remains available at every scale, including a remote target.
+ const port=p.locator('[data-port="auto:__intro"]');await port.focus();await p.keyboard.press('Enter');await p.locator('dialog select').selectOption('participant_actions_maxim_reset_done');await p.getByRole('button',{name:'Применить',exact:true}).click();assert.equal((await state()).intro.auto,'participant_actions_maxim_reset_done');console.log('PASS remote keyboard connection');
+ // All real exit kinds, with exact deletion, draft persistence, and undo.
+ await p.locator('[data-port="no:share_modal"]').focus();await p.keyboard.press('Enter');await p.locator('dialog select').selectOption('greet');await p.getByRole('button',{name:'Применить',exact:true}).click();
+ for(const key of ['auto:__intro','btn:greet:0','ok:share_modal','no:share_modal','target:pick_contact','auto:link_actions']){
+   await ui.connect(key,'');await state();assert(!await p.locator('#boardEdgeList option').evaluateAll((opts,key)=>opts.some(o=>o.value===key),key));await p.locator('#flUndo').click();assert(await p.locator('#boardEdgeList option').evaluateAll((opts,key)=>opts.some(o=>o.value===key),key));
+ }console.log('PASS button/auto/confirm/contact exits, delete and undo');
+ await ui.selectEdge('btn:greet:0');await area.focus();await p.keyboard.press('Backspace');assert(await p.locator('#boardEdgeList option[value="btn:greet:0"]').count());
+ await p.locator('#flView').focus();await p.keyboard.press('Delete');assert.equal(await p.locator('#boardEdgeList option[value="btn:greet:0"]').count(),0);await p.locator('#flUndo').click();console.log('PASS keyboard deletion protects text input');
+ // Failed drag / Escape / edge auto-pan at 100%.
+ await ui.zoomTo(1);let pr=await port.boundingBox(),vr=await p.locator('#flView').boundingBox();await wheel(pr.x-vr.x-100,pr.y-vr.y-180);pr=await port.boundingBox();vr=await p.locator('#flView').boundingBox();t=await transform();await p.mouse.move(pr.x+pr.width/2,pr.y+pr.height/2);await p.mouse.down();await p.mouse.move(vr.x+vr.width-10,vr.y+180);await p.waitForTimeout(450);assert((await transform()).x<t.x);await p.keyboard.press('Escape');await p.mouse.up();t=await transform();await p.waitForTimeout(150);assert.deepEqual(await transform(),t);assert.equal(await p.locator('.is-temp').count(),0);console.log('PASS auto-pan during link and Escape stop');
+ // Add/duplicate must use actual card sizes and not overlap occupied cards.
+ await p.getByRole('button',{name:'Навести порядок',exact:false}).click();await p.locator('[data-add="bot"]').click();let dup=await p.locator('[data-dup="greet"]').boundingBox();vr=await p.locator('#flView').boundingBox();await wheel(dup.x-vr.x-180,dup.y-vr.y-150);await p.locator('[data-dup="greet"]').click();
+ const collisions=await p.locator('#flLayer').evaluate(el=>{const rs=[...el.querySelectorAll('.fl-node')].map(n=>({id:n.dataset.id,x:n.offsetLeft,y:n.offsetTop,w:n.offsetWidth,h:n.offsetHeight}));return rs.flatMap((a,i)=>rs.slice(i+1).filter(b=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y).map(b=>[a.id,b.id]));});assert.deepEqual(collisions,[]);console.log('PASS measured placement with tall cards, addition and duplicate');
+ const before=await state();await p.reload();await p.locator('#boardZoom').waitFor();assert.deepEqual(await state(),before);console.log('PASS reload preserves edited scenario and layout');
+ const pending=p.waitForEvent('download');await p.locator('#flDownload').click();await(await pending).saveAs(path.join(root,'audit-max/board-release.zip'));require('./zip-utils.cjs').extract(path.join(root,'audit-max/board-release.zip'),'audit-max/board-release');
+ await p.goto('http://127.0.0.1:8000/audit-max/board-release/index.html?edit=1');await p.locator('#boardZoom').waitFor();assert.equal(await p.locator('.fl-node').count(),32);console.log('PASS exported package reopens with board and saved graph');
+ await open('employee');assert.equal(await p.locator('.fl-node').count(),12);await p.setViewportSize({width:1100,height:800});await p.getByRole('radio',{name:'Схема',exact:true}).click();await wheel(20,80);await p.getByRole('radio',{name:'Схема + превью',exact:true}).click();await p.waitForTimeout(100);assert((await transform()).z>=.08);console.log('PASS small scenario, view switching, resize');
+ await p.screenshot({path:path.join(root,'audit-max/board-editor.png')});assert.deepEqual(errors,[]);console.log('PASS no browser runtime errors');await context.close();
+}finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
+

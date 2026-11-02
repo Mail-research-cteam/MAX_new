@@ -1,0 +1,556 @@
+{
+  "schemaVersion": 1,
+  "id": "owner",
+  "revision": 1,
+  "title": "Владелец",
+  "scenario": {
+    "header": {
+      "name": "vktech_adminmail_bot",
+      "statusMobile": "бот",
+      "statusDesktop": "В сети"
+    },
+    "autoDelay": 800,
+    "lockPreviousButtons": true,
+    "contacts": [
+      {
+        "id": "maxim",
+        "name": "Максим Макаров",
+        "status": "В сети",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "maxim_2",
+        "name": "Анна Горбатенко",
+        "status": "В сети",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "alexander",
+        "name": "Александр Комаров",
+        "status": "5 минут назад",
+        "avatar": "",
+        "unread": true
+      },
+      {
+        "id": "pavel",
+        "name": "Полина Кузина",
+        "status": "17 минут назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "andrey",
+        "name": "Андрей Машков",
+        "status": "40 минут назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "andrey_2",
+        "name": "Олег Гетманский",
+        "status": "Час назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "pavel_2",
+        "name": "Павел Селезнев",
+        "status": "Час назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "maxim_4",
+        "name": "Александр Кучеренко",
+        "status": "2 часа назад",
+        "avatar": "",
+        "unread": false
+      }
+    ],
+    "meta": {
+      "x": 40,
+      "y": 430
+    },
+    "intro": {
+      "x": 40,
+      "y": 40,
+      "date": "Сегодня",
+      "auto": "greet",
+      "card": {
+        "name": "vktech_adminmail_bot",
+        "caption": "Поможет управлять совместным доступом к Почте"
+      }
+    },
+    "nodes": {
+      "greet": {
+        "type": "bot",
+        "x": 360,
+        "y": 40,
+        "time": "09:41",
+        "auto": "",
+        "text": "Здравствуйте 👋\nЭто бот сервисов Mail. Он поможет добавить участников для совместной работы в Почте\n\nПожалуйста, авторизуйтесь — для этого поделитесь номером телефона\n\nℹ️ Авторизация нужна только для того, чтобы определить: вы владелец аккаунта или участник",
+        "buttons": [
+          {
+            "label": "Авторизоваться",
+            "target": "share_modal"
+          },
+          {
+            "label": "Написать в поддержку",
+            "target": ""
+          }
+        ]
+      },
+      "share_modal": {
+        "type": "modal",
+        "x": 700,
+        "y": 40,
+        "title": "Поделитесь телефоном?",
+        "text": "Без доступа к данным бот не сможет отправить контакт",
+        "confirmLabel": "Поделиться",
+        "confirmTarget": "contact_sent",
+        "cancelLabel": "Отменить",
+        "cancelTarget": ""
+      },
+      "contact_sent": {
+        "type": "contact",
+        "x": 1000,
+        "y": 40,
+        "time": "09:41",
+        "auto": "owner_logged_in",
+        "name": "Иван Иванов",
+        "sub": "Новый контакт"
+      },
+      "owner_logged_in": {
+        "type": "bot",
+        "x": 1320,
+        "y": 40,
+        "time": "09:41",
+        "auto": "get_link",
+        "text": "✅ Вы вошли в аккаунт example@mail.ru как владелец",
+        "buttons": []
+      },
+      "get_link": {
+        "type": "bot",
+        "x": 1660,
+        "y": 40,
+        "time": "09:41",
+        "auto": "",
+        "text": "✅ Совместная работа в Почте подключена для 10 участников, включая вас\nДля аккаунта: [example@mail.ru](#)\nПериод: на месяц\nЦена: NNN ₽ в месяц\n\n**Получите ссылку**, чтобы отправить её участникам\n— без этого продолжить совместную работу в Почте не получится",
+        "buttons": [
+          {
+            "label": "Получить ссылку",
+            "target": "link_actions"
+          },
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          },
+          {
+            "label": "Написать в поддержку",
+            "target": ""
+          }
+        ]
+      },
+      "link_actions": {
+        "type": "bot",
+        "x": 2020,
+        "y": 40,
+        "time": "09:41",
+        "auto": "request_access",
+        "text": "**Что осталось сделать:**\n• Скопируйте ссылку и отправьте её участникам\n• Дождитесь от них запросов в этом боте\n• Подтвердите им доступ к аккаунту [example@mail.ru](#). У вас доступ уже есть\n• Обновите свой пароль — рекомендуем это сделать в целях безопасности\n\nСписок участников можно будет посмотреть в меню после того, как они запросят доступ",
+        "buttons": [
+          {
+            "label": "Скопировать ссылку",
+            "target": "toast_copied"
+          },
+          {
+            "label": "Поделиться ссылкой",
+            "target": "pick_contact"
+          },
+          {
+            "label": "Обновить мой пароль",
+            "target": ""
+          },
+          {
+            "label": "Ожидают подтверждения [N]",
+            "target": "menu"
+          },
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ],
+        "autoDelay": 90000
+      },
+      "toast_copied": {
+        "type": "toast",
+        "x": 2165,
+        "y": 896,
+        "title": "Вы скопировали",
+        "sub": "https://max.ru/vktech_adminbot",
+        "duration": 2500,
+        "auto": ""
+      },
+      "pick_contact": {
+        "type": "contact_modal",
+        "x": 2455,
+        "y": 893,
+        "target": "person_chat"
+      },
+      "person_chat": {
+        "type": "person_chat",
+        "x": 2731,
+        "y": 898,
+        "time": "09:41",
+        "auto": "",
+        "contactSource": "selected",
+        "message": "По ссылке ниже можно перейти в чат-бота в MAX, чтобы получить индивидуальный пароль для совместной работы в example@mail.ru:\n\nhttps://max.ru/vktech_adminbot"
+      },
+      "menu": {
+        "type": "bot",
+        "x": 3114,
+        "y": 432,
+        "time": "09:41",
+        "auto": "",
+        "text": "Выберите действие:",
+        "buttons": [
+          {
+            "label": "Ожидают подтверждения [N]",
+            "target": "pending_participants"
+          },
+          {
+            "label": "Подтверждённые участники [N]",
+            "target": "confirmed_participants"
+          },
+          {
+            "label": "Обновить ссылку-приглашение",
+            "target": "update_link_done"
+          },
+          {
+            "label": "Перезапустить бота",
+            "target": ""
+          },
+          {
+            "label": "Написать в поддержку",
+            "target": ""
+          }
+        ]
+      },
+      "request_access": {
+        "type": "bot",
+        "x": 2936,
+        "y": -416,
+        "time": "09:41",
+        "auto": "",
+        "text": "Максим Макаров +7 900 123-45-65 запрашивает доступ к аккаунту example@mail.ru\n\nПодтвердите доступ — **без этого участник не сможет войти в аккаунт**\n\nИз 10 купленных мест свободно 10",
+        "buttons": [
+          {
+            "label": "Подтвердить доступ",
+            "target": "access_approved"
+          },
+          {
+            "label": "Отклонить",
+            "target": "access_rejected"
+          }
+        ]
+      },
+      "access_approved": {
+        "type": "bot",
+        "x": 3251,
+        "y": -420,
+        "time": "09:41",
+        "auto": "",
+        "text": "✅ Доступ для участника Максим Макаров\n+7 ***45-65 подтверждён.\n\nПароль для входа в аккаунт отправлен участнику в чат-боте в MAX.\n\nВы подтвердили доступ 1 участнику. Из 10 мест свободно 9",
+        "buttons": [
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "access_rejected": {
+        "type": "bot",
+        "x": 3551,
+        "y": -420,
+        "time": "09:41",
+        "auto": "",
+        "text": "❌ Доступ для участника Максим Макаров +7 ***45-65 отклонён. Участник не сможет войти в почту example@mail.ru\n\nЕсли вы отклонили доступ по ошибке, нажмите на Отклонённые участники и подтвердите запрос.\n\n❗ Если подозреваете, что ссылка могла попасть не к тем людям, обновите её. И отправьте всем участникам, у которых ещё нет доступа",
+        "buttons": [
+          {
+            "label": "Получить ссылку ещё раз",
+            "target": "link_actions"
+          },
+          {
+            "label": "Обновить ссылку",
+            "target": "update_link_done"
+          },
+          {
+            "label": "Отклонённые участники",
+            "target": ""
+          }
+        ]
+      },
+      "update_link_done": {
+        "type": "bot",
+        "x": 3117,
+        "y": 1266,
+        "time": "09:41",
+        "auto": "",
+        "text": "✅ Ссылка-приглашение обновлена.\n\nСкопируйте и отправьте ссылку участникам\nexample@mail.ru",
+        "buttons": [
+          {
+            "label": "Скопировать ссылку",
+            "target": "toast_copied"
+          },
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "confirmed_participants": {
+        "type": "bot",
+        "x": 3973,
+        "y": -642,
+        "time": "09:41",
+        "auto": "",
+        "text": "Эти участники могут заходить в аккаунт\nexample@mail.ru со своими паролями.\n\nВыберите участника, если хотите отключить доступ\nили сбросить пароль",
+        "buttons": [
+          {
+            "label": "Герасимова Светлана +7 ***56-78",
+            "target": "participant_actions_svetlana"
+          },
+          {
+            "label": "Максим Макаров +7 ***45-65",
+            "target": "participant_actions_maxim"
+          },
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "participant_actions_svetlana": {
+        "type": "bot",
+        "x": 5105,
+        "y": -1053,
+        "time": "09:41",
+        "auto": "",
+        "text": "Выберите действие для участника Герасимова Светлана\n+7 ***56-78",
+        "buttons": [
+          {
+            "label": "Отключить доступ к аккаунту",
+            "target": "participant_actions_svetlana_disable_confirm"
+          },
+          {
+            "label": "Сбросить пароль",
+            "target": "participant_actions_svetlana_reset_confirm"
+          }
+        ]
+      },
+      "participant_actions_svetlana_disable_confirm": {
+        "type": "bot",
+        "x": 5013,
+        "y": 825,
+        "time": "09:41",
+        "auto": "",
+        "text": "Отключить доступ к аккаунту example@mail.ru для\nучастника Герасимова Светлана +7 ***56-78",
+        "buttons": [
+          {
+            "label": "Да, отключить",
+            "target": "participant_actions_svetlana_disabled"
+          },
+          {
+            "label": "Нет, не отключать",
+            "target": "participant_actions_svetlana"
+          }
+        ]
+      },
+      "participant_actions_svetlana_disabled": {
+        "type": "bot",
+        "x": 5002,
+        "y": 154,
+        "time": "09:41",
+        "auto": "",
+        "text": "❌ У участника Герасимова Светлана +7 ***56-78 больше\nнет доступа к аккаунту example@mail.ru",
+        "buttons": [
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "participant_actions_svetlana_reset_confirm": {
+        "type": "bot",
+        "x": 5280,
+        "y": 1537,
+        "time": "09:41",
+        "auto": "",
+        "text": "Сбросить пароль от аккаунта для участника\nГерасимова Светлана +7 ***56-78\n\nПосле сброса участнику в чат-боте в MAX придёт\nновый пароль",
+        "buttons": [
+          {
+            "label": "Да, сбросить пароль",
+            "target": "participant_actions_svetlana_reset_done"
+          },
+          {
+            "label": "Нет, не сбрасывать",
+            "target": "participant_actions_svetlana"
+          }
+        ]
+      },
+      "participant_actions_svetlana_reset_done": {
+        "type": "bot",
+        "x": 5296,
+        "y": 146,
+        "time": "09:41",
+        "auto": "",
+        "text": "✅ Пароль для участника Герасимова Светлана\n+7 ***56-78 сброшен.\n\nНовый пароль для входа в аккаунт отправлен\nучастнику Герасимова Светлана в чат-боте в MAX",
+        "buttons": [
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "participant_actions_maxim": {
+        "type": "bot",
+        "x": 5860,
+        "y": -1076,
+        "time": "09:41",
+        "auto": "",
+        "text": "Выберите действие для участника Максим Макаров\n+7 ***45-65",
+        "buttons": [
+          {
+            "label": "Отключить доступ к аккаунту",
+            "target": "participant_actions_maxim_disable_confirm"
+          },
+          {
+            "label": "Сбросить пароль",
+            "target": "participant_actions_maxim_reset_confirm"
+          }
+        ]
+      },
+      "participant_actions_maxim_disable_confirm": {
+        "type": "bot",
+        "x": 5751,
+        "y": 816,
+        "time": "09:41",
+        "auto": "",
+        "text": "Отключить доступ к аккаунту example@mail.ru для\nучастника Максим Макаров +7 ***45-65?",
+        "buttons": [
+          {
+            "label": "Да, отключить",
+            "target": "participant_actions_maxim_disabled"
+          },
+          {
+            "label": "Нет, не отключать",
+            "target": "participant_actions_maxim"
+          }
+        ]
+      },
+      "participant_actions_maxim_disabled": {
+        "type": "bot",
+        "x": 5746,
+        "y": 145,
+        "time": "09:41",
+        "auto": "",
+        "text": "❌ У участника Максим Макаров +7 ***45-65 больше\nнет доступа к аккаунту example@mail.ru",
+        "buttons": [
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "participant_actions_maxim_reset_confirm": {
+        "type": "bot",
+        "x": 6045,
+        "y": 804,
+        "time": "09:41",
+        "auto": "",
+        "text": "Сбросить пароль от аккаунта для участника\nМаксим Макаров +7 ***45-65?\n\nПосле сброса участнику в чат-боте в MAX придёт\nновый пароль",
+        "buttons": [
+          {
+            "label": "Да, сбросить пароль",
+            "target": "participant_actions_maxim_reset_done"
+          },
+          {
+            "label": "Нет, не сбрасывать",
+            "target": "participant_actions_maxim"
+          }
+        ]
+      },
+      "participant_actions_maxim_reset_done": {
+        "type": "bot",
+        "x": 6038,
+        "y": 133,
+        "time": "09:41",
+        "auto": "",
+        "text": "✅ Пароль для участника Максим Макаров\n+7 ***45-65 сброшен.\n\nНовый пароль для входа в аккаунт отправлен\nучастнику Максим Макаров в чат-боте в MAX",
+        "buttons": [
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "pending_participants": {
+        "type": "bot",
+        "x": 3475,
+        "y": 1377,
+        "time": "09:41",
+        "auto": "",
+        "text": "Герасимова Светлана\n+7 ***56-78 запрашивает доступ\nк аккаунту example@mail.ru\n\nПодтвердите доступ — после этого участнику\nпридёт пароль для входа в чат-боте в MAX",
+        "buttons": [
+          {
+            "label": "Подтвердить доступ",
+            "target": "pending_ivan_approved"
+          },
+          {
+            "label": "Отклонить",
+            "target": "pending_ivan_rejected"
+          }
+        ],
+        "autoDelay": 500
+      },
+      "pending_ivan_approved": {
+        "type": "bot",
+        "x": 3836,
+        "y": 988,
+        "time": "09:41",
+        "auto": "",
+        "text": "✅ Доступ для участника Герасимова Светлана +7 ***56-78 подтверждён.\n\nПароль для входа в аккаунт отправлен участнику в чат-боте в MAX.\n\nВы подтвердили доступ 2 участникам. Из 10 мест свободно 8\n\n",
+        "buttons": [
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "pending_ivan_rejected": {
+        "type": "bot",
+        "x": 3827,
+        "y": 1659,
+        "time": "09:41",
+        "auto": "",
+        "text": "❌ Доступ для участника Герасимова Светлана +7 ***56-78 отклонён. Участник не сможет войти в почту example@mail.ru\n\nЕсли вы отклонили доступ по ошибке, нажмите на Отклонённые участники и подтвердите запрос.\n\n❗ Если подозреваете, что ссылка могла попасть не к тем людям, обновите её. И отправьте всем участникам, у которых ещё нет доступа",
+        "buttons": [
+          {
+            "label": "Получить ссылку ещё раз",
+            "target": "link_actions"
+          },
+          {
+            "label": "Обновить ссылку",
+            "target": "update_link_done"
+          },
+          {
+            "label": "Отклонённые участники",
+            "target": ""
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+const assert=require('node:assert/strict'),b=require('../prototype/shared/board.js');
+// A zoom anchored on a cursor must preserve the same world point for negative pan and every scale.
+for(const z of [.08,.15,.45,1,2.5])for(const p of [{x:0,y:0},{x:850,y:440}]){const pan={x:-3120,y:170},before=b.world(p,pan,z),next=b.zoomAt(p,pan,z,z*1.2),after=b.world(p,next.pan,next.zoom);assert(Math.abs(before.x-after.x)<1e-8);assert(Math.abs(before.y-after.y)<1e-8);}
+const s={intro:{auto:'a'},nodes:{a:{auto:'b',buttons:[{target:'b'},{target:'b'}],confirmTarget:'b',cancelTarget:'b',target:'b'},b:{}}};
+for(const key of ['btn:a:0','btn:a:1','auto:a','ok:a','no:a','target:a','auto:__intro']){const copy=structuredClone(s);b.target(copy,key,'');const p=key.split(':');if(p[0]==='btn')assert.equal(copy.nodes.a.buttons[1-Number(p[2])].target,'b');assert.deepEqual(Object.keys(copy.nodes),['a','b']);assert.equal(JSON.stringify(copy).split('"target":""').length>1||JSON.stringify(copy).includes(':""'),true);}
+const occupied=[{x:0,y:0,w:250,h:1700},{x:0,y:1736,w:250,h:800},{x:300,y:0,w:250,h:200}];const result=b.place({x:0,y:0,w:250,h:2100},occupied);assert(occupied.every(r=>!b.overlaps(result,r)));assert.deepEqual(b.place({x:900,y:100,w:250,h:800},occupied),{x:900,y:100,w:250,h:800});
+console.log('PASS cursor anchoring, exact exit deletion, placement against tall cards, preservation of free coordinates');

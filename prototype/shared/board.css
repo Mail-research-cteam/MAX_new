@@ -1,0 +1,44 @@
+/* These styles apply exclusively to authoring controls. */
+.board-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;background:transparent;border:0;z-index:170;flex:0 0 auto;font:12px/1.4 Inter,system-ui,sans-serif;max-height:35vh;overflow:auto}
+.board-tools button{min-width:32px;min-height:32px;touch-action:manipulation}
+.board-tools select{min-height:32px;max-width:min(420px,65vw);min-width:0;font:inherit;background:#fff;color:#17181a}
+.board-tools output{font-variant-numeric:tabular-nums;min-width:40px;text-align:center}
+.board-info{max-width:480px;overflow-wrap:anywhere}
+.author-source{flex-basis:100%;margin:0;color:#5b6069;font:11px/1.4 Inter,system-ui,sans-serif}
+.board-tools :focus-visible,.fl-bar :focus-visible,#flView:focus-visible{outline:2px solid #0077ff;outline-offset:2px}
+.fl-viewport{overscroll-behavior:contain;touch-action:pinch-zoom}
+.fl-edges .edge-hit{stroke:transparent;stroke-width:18;pointer-events:stroke;cursor:pointer;vector-effect:non-scaling-stroke}
+.fl-edges .edge-line{vector-effect:non-scaling-stroke;pointer-events:none}
+.fl-edges .board-edge:hover .edge-line{stroke:#005cc5;stroke-width:3}
+.fl-edges .board-edge.is-selected .edge-line{stroke:#8b35cc;stroke-width:4}
+.fl-edges .board-edge.is-selected .edge-end-hit{fill:transparent}
+.fl-edges .is-temp{vector-effect:non-scaling-stroke;pointer-events:none}
+.fl-edges .edge-end-hit{fill:transparent;stroke:none;pointer-events:all;cursor:grab}
+.fl-edges .edge-end{pointer-events:none;fill:#b0b0bc}
+.fl-edges .board-edge.is-selected .edge-end{fill:#fff;stroke:#7052b8;stroke-width:2;vector-effect:non-scaling-stroke}
+.fl-edges .board-edge:has(.edge-end-hit:hover) .edge-end{fill:#3971ce}
+.fl-edges .board-edge.is-reconnecting{opacity:0;pointer-events:none}
+.fl-edges .board-edge.is-reconnecting .edge-end-hit{pointer-events:none}
+.fl-node.is-link-source{box-shadow:0 0 0 3px #0077ff}
+.fl-node.is-drop{box-shadow:0 0 0 4px #16a36a;background:#e6f8ef}
+.fl-port--out{position:relative;isolation:isolate}
+.fl-port--out:before{content:'';position:absolute;inset:-8px}
+.fl-ta{overscroll-behavior:contain}
+.board-selection-box{position:absolute;pointer-events:none;z-index:3;border:1px solid #3971ce;background:#3971ce1a}
+.board-selection-box[hidden]{display:none}
+.fl-node.is-node-selected{outline:calc(2px / var(--board-scale,1)) solid #3971ce;outline-offset:calc(3px / var(--board-scale,1))}
+.fl-hint{max-width:calc(100vw - 32px)}
+dialog button{padding:8px 12px;margin:8px 4px 0;border:1px solid #ccd0d5;border-radius:6px}
+dialog select{min-height:36px}
+body.is-editing{--editor-preview-width:400px}
+body.is-editing #flow{z-index:170;background:transparent;pointer-events:none}
+body.is-editing #flow .fl-bar,body.is-editing #flow .board-tools,body.is-editing #flow .fl-viewport,body.is-editing #flow .fl-fab{pointer-events:auto}
+body.is-editing .fl-bar{background:transparent;border:0}
+body.is-editing.view-split .fl-bar,body.is-editing.view-split .board-tools{width:calc(100% - var(--editor-preview-width))}
+body.is-editing .app{top:0;bottom:0;height:100dvh}
+@media(max-width:860px){body.is-editing{--editor-preview-width:320px}}
+
+#flow .fl-node .fl-input-slot{left:-2px;top:50%;transform:translate(-50%,-50%);box-sizing:border-box}
+#flow .fl-node .fl-input-slot[data-side="right"]{left:calc(100% + 2px);top:50%}
+#flow .fl-node .fl-input-slot[data-side="top"]{left:50%;top:-2px}
+#flow .fl-node .fl-input-slot[data-side="bottom"]{left:50%;top:calc(100% + 2px)}

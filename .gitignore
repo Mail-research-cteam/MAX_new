@@ -1,0 +1,33 @@
+# Generated artifacts and dependencies. Existing tracked files still need review.
+node_modules/
+dist/
+audit-max/
+tools/fixtures/
+tools/*.log
+*.zip
+*.7z
+*.rar
+*.log
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Historical root materials; the active application is prototype/.
+/index.html
+/chat.html
+/ADMIN-*.md
+/CARD-UI-REVIEW.md
+/EDGE-RECONNECT-UX.md
+/EDITOR-*.md
+/GRAPH-INTERACTION-REVIEW.md
+/RESPONDENT-*.md
+/LOCAL-PREVIEW.md
+/SHARED-WORKFLOW.md
+/STEP-CONTRACT.md
+/MESSAGE-IMAGES.md
+/PUBLICATION-AUDIT.md

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "purchase",
+    "title": "Покупка"
+  },
+  {
+    "id": "owner",
+    "title": "Владелец"
+  },
+  {
+    "id": "employee",
+    "title": "Сотрудник"
+  }
+]

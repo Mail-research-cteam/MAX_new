@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "id": "employee",
+  "revision": 1,
+  "title": "Сотрудник",
+  "scenario": {
+    "header": {
+      "name": "vktech_adminmail_bot",
+      "statusMobile": "бот",
+      "statusDesktop": "В сети"
+    },
+    "autoDelay": 800,
+    "lockPreviousButtons": true,
+    "contacts": [
+      {
+        "id": "maxim",
+        "name": "Максим Макаров",
+        "status": "В сети",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "maxim_2",
+        "name": "Максим Макаров",
+        "status": "В сети",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "alexander",
+        "name": "Александр Комаров",
+        "status": "5 минут назад",
+        "avatar": "",
+        "unread": true
+      },
+      {
+        "id": "pavel",
+        "name": "Павел Селезнев",
+        "status": "17 минут назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "andrey",
+        "name": "Андрей Машков",
+        "status": "40 минут назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "maxim_3",
+        "name": "Максим Макаров",
+        "status": "Час назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "andrey_2",
+        "name": "Андрей Машков",
+        "status": "Час назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "pavel_2",
+        "name": "Павел Селезнев",
+        "status": "Час назад",
+        "avatar": "",
+        "unread": false
+      },
+      {
+        "id": "maxim_4",
+        "name": "Максим Макаров",
+        "status": "2 часа назад",
+        "avatar": "",
+        "unread": false
+      }
+    ],
+    "meta": {
+      "x": 40,
+      "y": 430
+    },
+    "intro": {
+      "x": 40,
+      "y": 40,
+      "date": "Сегодня",
+      "auto": "greet",
+      "card": {
+        "name": "vktech_adminmail_bot",
+        "caption": "Поможет управлять совместным доступом к Почте"
+      }
+    },
+    "nodes": {
+      "greet": {
+        "type": "bot",
+        "x": 360,
+        "y": 40,
+        "time": "09:41",
+        "auto": "",
+        "text": "Здравствуйте 👋\nЭто бот сервисов Mail. Он поможет добавить участников для совместной работы в Почте\n\nПожалуйста, авторизуйтесь — для этого поделитесь номером телефона\n\nℹ️ Авторизация нужна только для того, чтобы определить: вы владелец аккаунта или участник",
+        "buttons": [
+          {
+            "label": "Авторизоваться",
+            "target": "share_modal"
+          },
+          {
+            "label": "Написать в поддержку",
+            "target": "menu"
+          }
+        ]
+      },
+      "share_modal": {
+        "type": "modal",
+        "x": 700,
+        "y": 40,
+        "title": "Поделитесь телефоном?",
+        "text": "Без доступа к данным бот не сможет отправить контакт",
+        "confirmLabel": "Поделиться",
+        "confirmTarget": "contact_sent",
+        "cancelLabel": "Отменить",
+        "cancelTarget": ""
+      },
+      "contact_sent": {
+        "type": "contact",
+        "x": 1000,
+        "y": 40,
+        "time": "09:41",
+        "auto": "employee_logged_in",
+        "name": "Иван Иванов",
+        "sub": "Новый контакт"
+      },
+      "employee_logged_in": {
+        "type": "bot",
+        "x": 1320,
+        "y": 40,
+        "time": "09:42",
+        "auto": "request_sent",
+        "text": "✅ Вы вошли в аккаунт example@mail.ru как участник",
+        "buttons": [],
+        "autoDelay": 800
+      },
+      "request_sent": {
+        "type": "bot",
+        "x": 1640,
+        "y": 40,
+        "time": "09:42",
+        "auto": "access_confirmed",
+        "autoDelay": 30000,
+        "text": "Запрос на доступ к аккаунту отправлен владельцу\n\nПосле подтверждения в **этом боте** придёт сообщение с паролем",
+        "buttons": [
+          {
+            "label": "Открыть меню",
+            "target": "menu"
+          }
+        ]
+      },
+      "access_confirmed": {
+        "type": "bot",
+        "x": 1980,
+        "y": 40,
+        "time": "09:45",
+        "auto": "",
+        "text": "✅ Доступ подтверждён\n\nВаш постоянный пароль — по кнопке ниже. С ним уже можно войти в почту example@mail.ru\n\n❗ По одному паролю входить в аккаунт можно только с одного компьютера. В целях безопасности не делитесь своим паролем с другими людьми",
+        "buttons": [
+          {
+            "label": "Посмотреть пароль",
+            "target": "password_page"
+          },
+          {
+            "label": "Открыть меню",
+            "target": "menu_copy"
+          }
+        ]
+      },
+      "password_page": {
+        "type": "external",
+        "x": 2340,
+        "y": 40,
+        "url": "password.html",
+        "repeatUrl": "password.html?expired=true"
+      },
+      "menu": {
+        "type": "bot",
+        "x": 1732,
+        "y": 869,
+        "time": "09:42",
+        "auto": "",
+        "text": "Выберите действие:",
+        "buttons": [
+          {
+            "label": "Перезапустить бота",
+            "target": ""
+          },
+          {
+            "label": "Написать в поддержку",
+            "target": ""
+          }
+        ]
+      },
+      "menu_copy": {
+        "type": "bot",
+        "x": 2190,
+        "y": 752,
+        "time": "09:42",
+        "auto": "",
+        "text": "Выберите действие:",
+        "buttons": [
+          {
+            "label": "Не помню пароль",
+            "target": "bot_1"
+          },
+          {
+            "label": "Написать в поддержку",
+            "target": ""
+          }
+        ]
+      },
+      "bot_1": {
+        "type": "bot",
+        "x": 2505,
+        "y": 674,
+        "auto": "",
+        "text": "✅ Запрос на восстановление пароля для аккаунта example@mail.ru выполнен\n\n👇Нажмите кнопку ниже, чтобы перейти по ссылке и получить новый пароль",
+        "time": "09:46",
+        "buttons": [
+          {
+            "label": "Получить пароль",
+            "target": "password_page"
+          },
+          {
+            "label": "Открыть меню",
+            "target": "menu_copy"
+          }
+        ]
+      }
+    }
+  }
+}
