@@ -89,7 +89,7 @@ window.MaxEditorUI={
     document.addEventListener('wheel',e=>{if(document.body.classList.contains('is-editing')&&(e.ctrlKey||e.metaKey)&&e.target.closest('.app'))e.preventDefault();},{capture:true,passive:false});
     const bar=document.querySelector('.fl-bar'),flow=document.getElementById('flow');bar.classList.add('editor-toolbar');
     bar.querySelector('b')?.remove();bar.querySelectorAll('.fl-sep,.fl-grow').forEach(el=>el.remove());
-    const removed=['Сохранить версию + JSON','Импорт JSON','Открыть сохранённую версию','Предыдущая сохранённая','Файловая версия'];
+    const removed=['Сохранить версию + JSON','Импорт JSON / HTML','Скачать комплект ZIP','Открыть сохранённую версию','Предыдущая сохранённая','Файловая версия'];
     const commands=[...bar.querySelectorAll('button')].filter(b=>removed.includes(b.textContent.trim()));commands.forEach(b=>b.remove());const source=document.querySelector('.author-source');source?.remove();
     const context=document.createElement('div');context.className='editor-context';context.append(bar.querySelector('.author-select'));
     const modes=document.createElement('div');modes.className='editor-segments';modes.setAttribute('role','radiogroup');modes.setAttribute('aria-label','Отображение редактора');
@@ -99,19 +99,22 @@ window.MaxEditorUI={
     modes.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const i=options.indexOf(document.activeElement),next=e.key==='Home'?0:e.key==='End'?2:(i+(e.key==='ArrowRight'?1:2))%3;options[next].focus();options[next].click();};
     const scenario=[...bar.querySelectorAll('button')].find(b=>b.textContent.trim()==='Новый вариант');
     const scenarioSelect=context.querySelector('select'),currentScenario=scenarioSelect.value,chooseScenario=scenarioSelect.onchange;
-    scenarioSelect.add(new Option('Новый сценарий',':new:'));
-    scenarioSelect.onchange=()=>{if(scenarioSelect.value===':new:'){scenarioSelect.value=currentScenario;scenario.click();}else chooseScenario();};
-    this.scenarioDropdown(scenarioSelect,context,commands,source);
-    scenario.remove();
+    if(scenario){scenarioSelect.add(new Option('Новый сценарий',':new:'));
+    scenarioSelect.onchange=()=>{if(scenarioSelect.value===':new:'){scenarioSelect.value=currentScenario;scenario.click();}else chooseScenario();};}
+    if(!window.MaxStandalone)this.scenarioDropdown(scenarioSelect,context,commands,source);
+    scenario?.remove();
     const actions=document.createElement('div');actions.className='editor-actions';
     const undo=document.getElementById('flUndo');this.iconButton(undo,'undo','Отменить — Ctrl+Z / Cmd+Z');
     const redo=document.createElement('button');redo.id='flRedo';redo.type='button';redo.className='fl-t';redo.disabled=true;this.iconButton(redo,'redo','Повторить — Ctrl+Shift+Z / Cmd+Shift+Z');
     const history=document.createElement('div');history.className='editor-history';history.setAttribute('role','group');history.setAttribute('aria-label','История изменений');history.append(undo,redo);
     document.getElementById('flReset')?.remove();
-    const restart=document.getElementById('flRestart');this.iconButton(restart,'restart','Перезапустить превью');const download=document.getElementById('flDownload');download.prepend(this.icon('download'));
+    const restart=document.getElementById('flRestart');this.iconButton(restart,'restart','Перезапустить превью');const download=document.getElementById('flDownload');download.classList.remove('fl-t--primary');download.prepend(this.icon('download'));
+    const jsonDownload=document.getElementById('flDownloadJSON');jsonDownload.prepend(this.icon('download'));
     document.getElementById('flFit')?.remove();
-    actions.append(restart,history,download);const status=document.getElementById('authorStatus');status.classList.add('editor-save-status');status.title=status.textContent;
-    bar.append(context,modes,actions,status);document.getElementById('flDraft').hidden=true;
+    actions.append(restart,history,document.getElementById('fileAutosaveControl'),download,jsonDownload);const status=document.getElementById('authorStatus');status.classList.add('editor-save-status');status.title=status.textContent;
+    if(window.MaxStandalone)bar.append(modes,actions,status);else bar.append(context,modes,actions,status);
+    new ResizeObserver(()=>document.documentElement.style.setProperty('--editor-navigation-height',bar.offsetHeight+'px')).observe(bar);
+    document.getElementById('flDraft').hidden=true;
     const palette=document.createElement('div');palette.className='node-palette';palette.setAttribute('role','toolbar');palette.setAttribute('aria-label','Добавление узлов');const inner=document.createElement('div');inner.className='node-palette-inner';palette.append(inner);
     function nodeButton(kind){const meta=MaxStepUI[kind],b=document.createElement('button');b.type='button';b.dataset.add=kind;b.className='node-type-button';b.title=meta.description;b.setAttribute('aria-label',meta.label);const glyph=MaxEditorUI.icon(meta.icon);glyph.style.color=meta.color;b.append(glyph,document.createTextNode(meta.label));return b;}
     for(const kinds of [['bot','user','contact'],['modal','payment','toast']]){const group=document.createElement('div');group.className='node-type-group';kinds.forEach(kind=>group.append(nodeButton(kind)));inner.append(group);}

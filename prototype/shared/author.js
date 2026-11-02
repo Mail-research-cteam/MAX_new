@@ -1,7 +1,8 @@
 'use strict';
 window.MaxAuthor = (() => {
   const aliases={'bot-lpr.html':'owner','bot-employee.html':'employee'};
-  const prefix='max-saved:1:'+new URL('../',document.currentScript.src).pathname+':';
+  const prefix='max-saved:1:'+(window.MaxStandalone?'standalone:':new URL('../',document.currentScript.src).pathname)+':';
+  const navigate=url=>window.MaxStandalone?window.MaxStandalone.navigate(url):location.assign(url);
   let catalog=[], fileBaseline=null, sourceMessage='',exporting=false;
   function validate(s) { return MaxSafety.validate(s); }
   function envelope(b) {
@@ -9,9 +10,10 @@ window.MaxAuthor = (() => {
     if(b.title!=null&&typeof b.title!=='string')throw Error('Название версии должно быть текстом');validate(b.scenario); return b;
   }
   async function json(url) { const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw Error('Не удалось загрузить '+url); return r.json(); }
-  function status(message,error=false) { const el=document.getElementById('authorStatus');if(el){el.hidden=message==='Черновик сохранён в браузере';el.textContent=el.hidden?'':message;el.title=el.hidden?'':message;el.classList.toggle('author-error',error);} }
+  function status(message,error=false) { const el=document.getElementById('authorStatus');if(el){el.hidden=(!!window.MaxStandalone&&!error)||message==='Черновик сохранён в браузере';el.textContent=el.hidden?'':message;el.title=el.hidden?'':message;el.classList.toggle('author-error',error);} }
   function failure(e) { document.body.replaceChildren();const p=document.createElement('p');p.textContent='Не удалось открыть сценарий: '+e.message;document.body.append(p); }
   async function load() {
+    if(window.MaxStandalone){fileBaseline=envelope(window.MaxStandalone.bundle());await MaxMessageMedia.verify(fileBaseline.scenario);const recovered=await MaxAutosave.recover(fileBaseline);if(recovered!==fileBaseline)window.MaxStandalone.changed();catalog=[{id:fileBaseline.id,title:fileBaseline.title||fileBaseline.id}];sourceMessage='Источник: автономный HTML. После правок нажмите «Скачать HTML».';return recovered;}
     catalog=await json('scenarios/catalog.json');
     if(!Array.isArray(catalog)||catalog.some(x=>!MaxSafety.record(x)||!MaxSafety.identifier(x.id)||typeof x.title!=='string')||new Set(catalog.map(x=>x.id)).size!==catalog.length)throw Error('Некорректный каталог сценариев');
     const q=new URLSearchParams(location.search), file=location.pathname.split('/').pop();
@@ -43,12 +45,14 @@ window.MaxAuthor = (() => {
   function saveBundle(b,s) {
     const next=envelope({...b,scenario:s});
     const text=JSON.stringify(next,null,2);let stored=false;
-    try{const old=localStorage.getItem(prefix+b.id),serialized=JSON.stringify(next);store([...(old&&old!==serialized?[[prefix+'backup:'+b.id,old]]:[]),[prefix+b.id,serialized]]);stored=true;}catch{}
+    if(!window.MaxStandalone)try{const old=localStorage.getItem(prefix+b.id),serialized=JSON.stringify(next);store([...(old&&old!==serialized?[[prefix+'backup:'+b.id,old]]:[]),[prefix+b.id,serialized]]);stored=true;}catch{}
     download(b.id+'.json',text,'application/json');
     status(stored?'Версия сохранена в этом браузере; JSON скачан. Исходный файл не перезаписан.':'JSON скачан. Не удалось сохранить версию в браузере; сохраните скачанный файл.',!stored);
   }
   function install(b,get,replace,connect) {
     const bar=document.querySelector('.fl-bar');
+    MaxAutosave.install(b,()=>envelope({...b,scenario:get()}));
+    window.MaxStandalone?.register(()=>envelope({...b,scenario:get()}));
     const source=document.createElement('p');source.className='author-source';source.textContent=sourceMessage;source.setAttribute('role','note');document.querySelector('.board-tools').append(source);
     // Board owns the combined height of the author toolbar and board controls.
     const ports=()=>document.querySelectorAll('.fl-port--out').forEach(p=>{p.tabIndex=0;p.setAttribute('role','button');p.setAttribute('aria-label','Выбрать следующий шаг');p.title='Перетащите связь или нажмите Enter для выбора шага';});
@@ -62,37 +66,40 @@ window.MaxAuthor = (() => {
       select.value=parts[0]==='btn'?(n.buttons[+parts[2]].target||''):(n[{auto:'auto',ok:'confirmTarget',no:'cancelTarget',target:'target'}[parts[0]]]||'');
       label.append(select);form.append(label);const apply=document.createElement('button');apply.textContent='Применить';apply.type='button';apply.onclick=()=>{connect(port.dataset.port,select.value);dialog.close();};const cancel=document.createElement('button');cancel.textContent='Отмена';form.append(apply,cancel);dialog.append(form);document.body.append(dialog);const key=port.dataset.port;dialog.onclose=()=>{dialog.remove();document.querySelector('[data-port="'+key+'"]')?.focus();};dialog.showModal();select.focus();
     });
-    const label=document.createElement('span');label.id='authorStatus';label.className='author-status';label.setAttribute('role','status');label.textContent='Открыт: '+(b.title||b.id);bar.append(label);
+    const label=document.createElement('span');label.id='authorStatus';label.className='author-status';label.setAttribute('role','status');label.textContent='Открыт: '+(b.title||b.id);label.hidden=!!window.MaxStandalone;bar.append(label);
     function button(title,fn){const x=document.createElement('button');x.className='fl-t';x.textContent=title;x.onclick=async()=>{try{await fn();}catch(e){status(e.message,true);}};bar.append(x);return x;}
     const select=document.createElement('select');select.className='author-select';select.setAttribute('aria-label','Сценарий');
     const choices=new Map(catalog.map(x=>[x.id,x.title]));
-    try {for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith(prefix)&&!key.startsWith(prefix+'backup:')){try{const x=envelope(JSON.parse(localStorage.getItem(key)));choices.set(x.id,x.title||x.id);}catch{}}}}catch{}
+    if(!window.MaxStandalone)try {for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith(prefix)&&!key.startsWith(prefix+'backup:')){try{const x=envelope(JSON.parse(localStorage.getItem(key)));choices.set(x.id,x.title||x.id);}catch{}}}}catch{}
     for(const [id,title] of choices){const o=new Option(title,id);o.selected=id===b.id;select.add(o);}bar.prepend(select);
-    select.onchange=()=>{location.href='index.html?scenario='+encodeURIComponent(select.value)+'&edit=1';};
+    select.onchange=()=>{navigate('index.html?scenario='+encodeURIComponent(select.value)+'&edit=1');};
     button('Сохранить версию + JSON',()=>saveBundle(b,get()));
-    button('Новый вариант',()=>{
+    const jsonDownload=button('Скачать JSON',()=>{const next=envelope({...b,scenario:get()});download(b.id+'.json',JSON.stringify(next,null,2),'application/json');});jsonDownload.id='flDownloadJSON';jsonDownload.classList.add('fl-t--primary');
+    if(!window.MaxStandalone)button('Новый вариант',()=>{
       const id=prompt('ID нового варианта: латинские буквы, цифры, дефис',b.id+'-variant');if(!id)return;
       if(!MaxSafety.identifier(id))throw Error('Допустимы латинские буквы, цифры, дефис и подчёркивание');
       if(choices.has(id))throw Error('Этот ID уже существует');
-      const next={...b,id,revision:1,title:id,scenario:get()};envelope(next);localStorage.setItem(prefix+id,JSON.stringify(next));location.href='index.html?scenario='+encodeURIComponent(id)+'&edit=1';
+      const next={...b,id,revision:1,title:id,scenario:get()};envelope(next);localStorage.setItem(prefix+id,JSON.stringify(next));navigate('index.html?scenario='+encodeURIComponent(id)+'&edit=1');
     });
-    const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.hidden=true;bar.append(input);
+    const input=document.createElement('input');input.type='file';input.accept='.json,.html,application/json,text/html';input.hidden=true;bar.append(input);
     let importRequest=0;
     input.onchange=async()=>{const request=++importRequest;try{
-      const file=input.files[0];if(!file)return;if(file.size>MaxSafety.MAX_BYTES)throw Error('JSON превышает 20 МБ');
-      const next=envelope(MaxSafety.parse(await file.text()));
+      const file=input.files[0];if(!file)return;if(file.size>(/\.html$/i.test(file.name)?100*1024*1024:MaxSafety.MAX_BYTES))throw Error('Файл слишком большой');
+      const source=await file.text();
+      const next=/\.html$/i.test(file.name)?MaxHTML.extract(source):envelope(MaxSafety.parse(source));
       await MaxMessageMedia.verify(next.scenario);
       if(request!==importRequest)return;
       if(choices.has(next.id)&&!confirm('Заменить версию и черновик? Предыдущие данные будут сохранены в резервных копиях.'))return;
+      if(window.MaxStandalone){if(next.id!==b.id)throw Error('В автономный файл можно импортировать только текущий флоу');replace(next.scenario);status('Импортировано. Нажмите «Скачать HTML».');return;}
       const key='max-draft:1:'+location.pathname.replace(/[^/]*$/,'')+':'+next.id+':'+next.revision,old=localStorage.getItem(prefix+next.id),draft=localStorage.getItem(key);
       store([...(old?[[prefix+'backup:'+next.id,old]]:[]),...(draft?[[key+':backup',draft]]:[]),[prefix+next.id,JSON.stringify(next)],[key,JSON.stringify(next.scenario)],[key+':base',JSON.stringify(next.scenario)]]);
-      location.href='index.html?scenario='+encodeURIComponent(next.id)+'&edit=1';
+      navigate('index.html?scenario='+encodeURIComponent(next.id)+'&edit=1');
     }catch(e){if(request===importRequest)status(e.message,true);}finally{if(request===importRequest)input.value='';}};
-    button('Импорт JSON',()=>input.click());
-    button('Открыть сохранённую версию',()=>{location.href='index.html?scenario='+encodeURIComponent(b.id)+'&saved=1';});
-    button('Предыдущая сохранённая',()=>{const raw=localStorage.getItem(prefix+'backup:'+b.id);if(!raw)throw Error('Предыдущей сохранённой версии пока нет');const previous=envelope(JSON.parse(raw));replace(previous.scenario);status('Предыдущая версия загружена в черновик. Проверьте и сохраните.');});
+    button('Импорт JSON / HTML',()=>input.click());
+    if(!window.MaxStandalone)button('Открыть сохранённую версию',()=>{navigate('index.html?scenario='+encodeURIComponent(b.id)+'&saved=1');});
+    if(!window.MaxStandalone)button('Предыдущая сохранённая',()=>{const raw=localStorage.getItem(prefix+'backup:'+b.id);if(!raw)throw Error('Предыдущей сохранённой версии пока нет');const previous=envelope(JSON.parse(raw));replace(previous.scenario);status('Предыдущая версия загружена в черновик. Проверьте и сохраните.');});
     button('Файловая версия',async()=>{
-      const baseline=envelope(await json('scenarios/'+b.id+'.json'));
+      const baseline=window.MaxStandalone?fileBaseline:envelope(await json('scenarios/'+b.id+'.json'));
       if(!confirm('Загрузить данные JSON с диска в редактор? Текущие изменения можно будет отменить.'))return;
       replace(baseline.scenario);status('Файловая версия загружена в черновик. Сохранённая версия пока не заменена.');
     });

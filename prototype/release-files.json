@@ -195,6 +195,7 @@
   "scenarios/purchase.json",
   "shared/app.js",
   "shared/author.js",
+  "shared/autosave.js",
   "shared/board.css",
   "shared/board.js",
   "shared/boundary.css",
@@ -208,6 +209,7 @@
   "shared/respondent.css",
   "shared/respondent.js",
   "shared/safety.js",
+  "shared/standalone.js",
   "shared/step-ui.js",
   "shared/style.css"
 ]

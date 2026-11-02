@@ -65,7 +65,7 @@ window.MaxMessageMedia=(()=>{
  function installViewer(api){
   const host=document.querySelector('.app'),viewer=document.createElement('section');let opener,blocked=[];
   viewer.className='message-image-viewer';viewer.hidden=true;viewer.setAttribute('role','dialog');viewer.setAttribute('aria-modal','true');viewer.setAttribute('aria-label','Просмотр изображения');host.append(viewer);
-  const asset=(name,section)=>'assets/message-media/'+section+'/'+name+'.svg';
+  const asset=(name,section)=>{const path='assets/message-media/'+section+'/'+name+'.svg';return window.MaxStandalone?window.MaxStandalone.asset(path):path;};
   const icon=(desktop,mobile)=>'<span class="message-image-viewer__icon"><img class="media-desktop-icon" src="'+asset(desktop,'desktop')+'" alt="" width="24" height="24"><img class="media-mobile-icon" src="'+asset(mobile,'mobile')+'" alt="" width="24" height="24"></span>';
   function close(){if(viewer.hidden)return;viewer.hidden=true;viewer.replaceChildren();blocked.forEach(el=>{el.inert=false;});blocked=[];if(opener?.isConnected)opener.focus({preventScroll:true});}
   api.feed.addEventListener('click',e=>{

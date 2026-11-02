@@ -22,7 +22,7 @@
   var bundle;
   try { bundle = await MaxAuthor.load(); } catch(e) { MaxAuthor.failure(e); return; }
   var DEFAULT = bundle.scenario;
-  var EDIT = /[?&]edit(=1)?(&|$)/.test(location.search);
+  var EDIT = /[?&]edit(=1)?(&|$)/.test(window.MaxStandalone?.search??location.search);
   // Ключ версии: при правке предзаполненных контактов в файле его нужно
   // поднять, иначе редактор подхватит старый черновик из localStorage и
   // правки в файле не будут видны.
@@ -35,7 +35,7 @@
   // ссылке всегда показывает то, что зашито в файл, иначе респондент увидел
   // бы чужие несохранённые правки.
   var fromDraft = false;
-  if (EDIT) {
+  if (EDIT && !window.MaxStandalone) {
     try {
       var raw = localStorage.getItem(STORE);
       if (raw) {
@@ -53,12 +53,15 @@
 
   function flushDraft() {
     clearTimeout(saveTimer); saveTimer = null;
+    if(window.MaxStandalone)return;
     try { localStorage.setItem(STORE, JSON.stringify(S)); localStorage.setItem(STORE+':base', JSON.stringify(DEFAULT)); MaxAuthor.status('Черновик сохранён в браузере'); }
     catch(e) { MaxAuthor.status('Не удалось сохранить черновик. Скачайте JSON.', true); }
   }
   function save() {
     if (!EDIT) return;
-    MaxAuthor.status('Есть изменения…');
+    window.MaxStandalone?.changed();
+    window.MaxAutosaveSession?.changed();
+    MaxAuthor.status(window.MaxStandalone?'Есть изменения — нажмите «Скачать HTML».':'Есть изменения…');
     clearTimeout(saveTimer); saveTimer = setTimeout(flushDraft, 300);
   }
   function snapshot() {
@@ -1277,7 +1280,7 @@
 
     imageViewer = MaxMessageMedia.installViewer({feed:feed,getNode:function(id){return S.nodes[id];},author:function(node){return {name:node.type==='bot'?S.header.name:'Вы',avatar:node.type==='bot'?($('.tb-avatar img')||{}).src||'':'',date:S.intro.date||''};}});
     MaxRespondent.install({state:function(){return S;},person:personContact,openBot:switchToBotChat,restart:restart});
-    if (!/[?&]edit(=1)?(&|$)/.test(location.search)) return;
+    if (!/[?&]edit(=1)?(&|$)/.test(window.MaxStandalone?.search??location.search)) return;
 
     document.body.classList.add('is-editing');
     layer = $('#flLayer');
@@ -1289,7 +1292,8 @@
     if (fromDraft) $('#flDraft').hidden = false;
     MaxAuthor.install(bundle, function(){ return clone(S); }, function(next){ snapshot(); S=clone(next); clearTimers(); buildGraph(); renderChrome(); restart(); save(); }, function(key,target){ snapshot(); setTarget(key,target); buildGraph(); syncPreview(); save(); });
     window.addEventListener('pagehide', function(){ if(saveTimer) flushDraft(); });
-    $('#flDownload').textContent='Скачать комплект ZIP';
+    $('#flDownload').textContent='Скачать HTML';
+    if(!window.MaxStandalone){var zipButton=document.createElement('button');zipButton.className='fl-t';zipButton.textContent='Скачать комплект ZIP';zipButton.onclick=function(){MaxAuthor.exportBundle(bundle,S);};$('.fl-bar').append(zipButton);}
     MaxEditorUI.install();updateHistory();
 
     $$('[data-add]').forEach(function(b){b.addEventListener('click',function(){addNode(b.getAttribute('data-add'));});});
@@ -1299,7 +1303,7 @@
     $('#flFit')?.addEventListener('click', fitView);
     $('#flRestart').addEventListener('click', restart);
 
-    $('#flDownload').addEventListener('click', function(){ MaxAuthor.exportBundle(bundle, S); });
+    $('#flDownload').addEventListener('click', async function(){var button=this;button.disabled=true;try{MaxAuthor.status('Собирается HTML…');await MaxHTML.exportHTML(bundle,S);}catch(e){MaxAuthor.status('Экспорт не выполнен: '+e.message,true);}finally{button.disabled=false;}});
     $('#flUndo').addEventListener('click', undo);
     $('#flRedo').addEventListener('click', redo);
     document.addEventListener('keydown', function (e) {
