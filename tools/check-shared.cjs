@@ -16,7 +16,6 @@ const root=path.resolve(__dirname,'..');
   try{
     const context=await browser.newContext({acceptDownloads:true});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
     const base='http://127.0.0.1:8000/prototype/';
-    async function command(name){await page.locator('.scenario-trigger').click();await page.getByRole('button',{name,exact:true}).click();}
     await page.goto(base+'bot-lpr.html?edit=1');await page.locator('.scenario-trigger').waitFor();
     assert.equal(await page.locator('.fl-node').count(),30);console.log('PASS owner graph');
     const field=page.locator('[data-path="nodes.greet.text"]');const original=await field.inputValue();await field.fill(original+' TEST-MARKER');await page.waitForTimeout(500);
@@ -28,9 +27,10 @@ const root=path.resolve(__dirname,'..');
     await page.locator('#flRestart').click({force:true});assert(!await page.locator('#shareModal').evaluate(e=>e.classList.contains('is-open')));console.log('PASS restart closes modal');
     const id='smoke-'+Date.now();page.once('dialog',d=>d.accept(id));await page.locator('.scenario-trigger').click();await page.getByRole('option',{name:'Новый сценарий',exact:true}).click();await page.waitForURL('**scenario='+id+'&edit=1');await page.locator('.scenario-trigger').waitFor();
     assert.equal(await page.locator('.fl-node').count(),30);console.log('PASS create variant');
-    const downloadPromise=page.waitForEvent('download');await command('Сохранить версию + JSON');await (await downloadPromise).saveAs(path.join(root,'audit-max/shared-smoke.json'));
-    await command('Открыть сохранённую версию');await page.locator('.bot-btn').first().waitFor();assert((await page.locator('.chat-scroll').textContent()).includes('TEST-MARKER'));console.log('PASS saved variant shown to respondent');
-    await page.goto(base+'index.html?scenario='+id+'&edit=1');await page.locator('.scenario-trigger').waitFor();const zipPromise=page.waitForEvent('download');await page.locator('#flDownload').click();await (await zipPromise).saveAs(path.join(root,'audit-max/shared-smoke.zip'));console.log('PASS ZIP exported');
+    const downloadPromise=page.waitForEvent('download');await page.locator('#flDownloadJSON').click();await (await downloadPromise).saveAs(path.join(root,'audit-max/shared-smoke.json'));
+    const exported=JSON.parse(fs.readFileSync(path.join(root,'audit-max/shared-smoke.json'),'utf8'));assert(exported.scenario.nodes.greet.text.includes('TEST-MARKER'));
+    await page.goto(base+'index.html?scenario='+id+'&saved=1');await page.locator('.bot-btn').first().waitFor();assert((await page.locator('.chat-scroll').textContent()).includes('TEST-MARKER'));console.log('PASS saved variant shown to respondent');
+    await page.goto(base+'index.html?scenario='+id+'&edit=1');await page.locator('.scenario-trigger').waitFor();const zipPromise=page.waitForEvent('download');await page.evaluate(b=>MaxAuthor.exportBundle(b,b.scenario),exported);await (await zipPromise).saveAs(path.join(root,'audit-max/shared-smoke.zip'));console.log('PASS ZIP exported');
     require('./zip-utils.cjs').extract(path.join(root,'audit-max/shared-smoke.zip'),'audit-max/verified-release');
     await plain.goto('http://127.0.0.1:8000/audit-max/verified-release/index.html');await plain.locator('.bot-btn').first().waitFor();assert((await plain.locator('.chat-scroll').textContent()).includes('TEST-MARKER'));assert.equal(await plain.locator('html').getAttribute('data-frozen'),'true');console.log('PASS exported release opens with selected scenario');
     await page.locator('.fl-port--out').first().focus();await page.keyboard.press('Enter');await page.locator('dialog').waitFor();await page.getByRole('button',{name:'Отмена',exact:true}).click();console.log('PASS keyboard connection dialog');

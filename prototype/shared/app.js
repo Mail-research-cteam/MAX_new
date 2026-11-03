@@ -1171,11 +1171,13 @@
   function fitView() { if(board) board.fit(); }
 
   function setView(mode) {
+    if(board){board.layout();board.cancel();}
     document.body.classList.remove('view-split', 'view-flow', 'view-preview');
     document.body.classList.add('view-' + mode);
     $$('[data-view]').forEach(function (b) {
       b.classList.toggle('is-on', b.getAttribute('data-view') === mode);
     });
+    if(board)board.layout();
     setTimeout(drawEdges, 60);
   }
 

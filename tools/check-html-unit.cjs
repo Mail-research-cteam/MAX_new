@@ -20,6 +20,13 @@ for(const p of ['safety.js','standalone.js','author.js'])vm.runInContext(fs.read
  new vm.Script(scripts[1][1]);
  const names=Object.keys(pack.files);assert.deepEqual(names.filter(p=>/^scenarios\/.*\.json$/.test(p)).sort(),['scenarios/'+id+'.json','scenarios/catalog.json'].sort());
  for(const file of ['index.html','mail.html','password.html','shared/standalone.js','assets/fonts/font-01.woff2','THIRD-PARTY-NOTICES.txt'])assert.ok(pack.files[file],file+' must be embedded');
+ for(const file of ['shared/board.js','shared/board.css','shared/editor-ui.js','shared/app.js'])assert.equal(Buffer.from(pack.files[file],'base64').toString(),fs.readFileSync(path.join(root,file),'utf8'),'new HTML must embed current navigation: '+file);
  assert.equal(JSON.parse(Buffer.from(pack.files['scenarios/'+id+'.json'],'base64')).scenario.nodes[key].text,s.nodes[key].text);
  console.log('PASS HTML '+id+': selected scenario only, resources, nonmutation, script escaping, executable bootstrap syntax');
+ await context.MaxAuthor.exportBundle(b,s);
+ const entries=require('./zip-utils.cjs').entries(Buffer.from(await downloaded.arrayBuffer()));
+ for(const file of ['shared/board.js','shared/board.css','shared/editor-ui.js','shared/app.js'])assert.equal(entries.find(e=>e.name===file).data.toString(),fs.readFileSync(path.join(root,file),'utf8'),'ZIP must embed current navigation: '+file);
+ assert.equal(JSON.parse(entries.find(e=>e.name==='scenarios/'+id+'.json').data).scenario.nodes[key].text,s.nodes[key].text);
+ assert.equal(JSON.stringify(b),before,'ZIP must not mutate the original scenario');
+ console.log('PASS ZIP '+id+': current navigation sources, selected edited data, original unchanged');
 }})().catch(e=>{console.error(e);process.exitCode=1;});

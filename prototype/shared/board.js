@@ -3,7 +3,13 @@
   'use strict';
   const MIN=.08,MAX=2.5,GAP=36;
   function world(p,pan,z){return {x:(p.x-pan.x)/z,y:(p.y-pan.y)/z};}
-  function zoomAt(p,pan,z,next){next=Math.max(MIN,Math.min(MAX,next));const w=world(p,pan,z);return {zoom:next,pan:{x:p.x-w.x*next,y:p.y-w.y*next}};}
+  function zoomAt(p,pan,z,next){next=Math.max(MIN,Math.min(MAX,next));if(next===z)return {zoom:z,pan:{...pan}};const w=world(p,pan,z);return {zoom:next,pan:{x:p.x-w.x*next,y:p.y-w.y*next}};}
+  // Browser deltas already include the OS scroll direction. Page units use each axis.
+  function wheelDelta(e,size){
+    const x=e.deltaX*(e.deltaMode===1?16:e.deltaMode===2?size.width:1);
+    const y=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?size.height:1);
+    return e.shiftKey&&!e.ctrlKey&&!e.metaKey?{x:x||y,y:0}:{x,y};
+  }
   function overlaps(a,b,gap=GAP){return a.x<b.x+b.w+gap&&a.x+a.w+gap>b.x&&a.y<b.y+b.h+gap&&a.y+a.h+gap>b.y;}
   function selectionRect(a,b){return {x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(b.x-a.x),h:Math.abs(b.y-a.y)};}
   function place(rect,occupied){let p={...rect};for(let attempt=0;attempt<occupied.length+2;attempt++){const hits=occupied.filter(b=>overlaps(p,b));if(!hits.length)return p;p.y=Math.max(...hits.map(b=>b.y+b.h))+GAP;}throw Error('Не удалось разместить карточку');}
@@ -60,7 +66,7 @@
     const tools=document.createElement('div');tools.className='board-tools';tools.setAttribute('role','group');tools.setAttribute('aria-label','Управление доской');document.querySelector('.fl-bar').after(tools);
     function button(text,fn,label){const b=document.createElement('button');b.type='button';b.textContent=text;b.className='fl-t';if(label)b.setAttribute('aria-label',label);b.onclick=fn;tools.append(b);return b;}
     const output=document.createElement('output');output.id='boardZoom';output.setAttribute('aria-label','Масштаб доски');
-    button('−',()=>stepZoom(-.2),'Уменьшить доску');tools.append(output);button('+',()=>stepZoom(.2),'Увеличить доску');button('100%',()=>zoom(0,true),'Сбросить масштаб доски');button('Вся схема',fit);
+    button('−',()=>stepZoom(-.2),'Уменьшить доску');tools.append(output);button('+',()=>stepZoom(.2),'Увеличить доску');button('100%',()=>zoom(0,true),'Сбросить масштаб доски').id='boardResetZoom';button('Вся схема',fit).id='boardFit';
     const list=document.createElement('select');list.id='boardEdgeList';list.setAttribute('aria-label','Выбрать связь');tools.append(list);list.onchange=()=>select(list.value||null);
     const remove=button('Удалить связь',deleteEdge);remove.disabled=true;
     const arrange=button('Навести порядок',arrangeGraph);arrange.id='boardArrange';
@@ -71,10 +77,29 @@
     function local(client){const r=bounds();return {x:client.x-r.left,y:client.y-r.top};}
     function apply(){const s=api.view();layer.style.transform=`translate(${s.pan.x}px,${s.pan.y}px) scale(${s.zoom})`;layer.style.setProperty('--board-scale',s.zoom);output.value=Math.round(s.zoom*100)+'%';if(drag?.type==='marquee'&&drag.moved)paintMarquee();}
     function setView(pan,z){api.setView(pan,z);apply();}
-    function zoom(factor,reset=false,anchor){const s=api.view(),r=bounds(),p=anchor||{x:r.width/2,y:r.height/2};const next=zoomAt(p,s.pan,s.zoom,reset?1:s.zoom*factor);setView(next.pan,next.zoom);if(link)paintLink();}
+    // Reserve the strips covered by fixed editor controls. Coordinates are viewport-local.
+    function available(){
+      const r=bounds();if(!r.width||!r.height||getComputedStyle(viewport).visibility==='hidden')return null;
+      let top=0,bottom=r.height;
+      for(const selector of ['.editor-toolbar','.node-palette-inner','.zoom-dock']){
+        const el=document.querySelector(selector);if(!el||!el.getClientRects().length)continue;
+        const a=el.getBoundingClientRect();if(a.right<=r.left||a.left>=r.right)continue;
+        if(selector==='.editor-toolbar')top=Math.max(top,a.bottom-r.top+12);
+        else bottom=Math.min(bottom,a.top-r.top-12);
+      }
+      bottom=Math.max(top+1,bottom);
+      return {x:0,y:top,width:r.width,height:bottom-top,cx:r.width/2,cy:(top+bottom)/2};
+    }
+    let lastArea=null;
+    function layout(){
+      const next=available();if(!next)return;
+      if(lastArea){const s=api.view();setView({x:s.pan.x+next.cx-lastArea.cx,y:s.pan.y+next.cy-lastArea.cy},s.zoom);}
+      lastArea=next;
+    }
+    function zoom(factor,reset=false,anchor){const s=api.view(),r=available();if(!r)return;const p=anchor||{x:r.cx,y:r.cy};const next=zoomAt(p,s.pan,s.zoom,reset?1:s.zoom*factor);setView(next.pan,next.zoom);if(link)paintLink();}
     function stepZoom(delta){const s=api.view();zoom(Math.max(MIN,Math.min(MAX,s.zoom+delta))/s.zoom);}
     function rects(){return [...layer.querySelectorAll('.fl-node')].map(el=>({id:el.dataset.id,x:el.offsetLeft,y:el.offsetTop,w:el.offsetWidth,h:el.offsetHeight}));}
-    function fit(){const rs=rects(),r=bounds();if(!rs.length||!r.width||!r.height)return;const x=Math.min(...rs.map(a=>a.x)),y=Math.min(...rs.map(a=>a.y)),w=Math.max(...rs.map(a=>a.x+a.w))-x,h=Math.max(...rs.map(a=>a.y+a.h))-y;const z=Math.max(MIN,Math.min(1,(r.width-80)/w,(r.height-80)/h));setView({x:40-x*z,y:40-y*z},z);api.draw();}
+    function fit(){const rs=rects(),r=available();if(!rs.length||!r)return;const x=Math.min(...rs.map(a=>a.x)),y=Math.min(...rs.map(a=>a.y)),w=Math.max(...rs.map(a=>a.x+a.w))-x,h=Math.max(...rs.map(a=>a.y+a.h))-y;const z=Math.max(MIN,Math.min(1,Math.max(1,r.width-80)/w,Math.max(1,r.height-80)/h));setView({x:r.cx-(x+w/2)*z,y:r.cy-(y+h/2)*z},z);api.draw();}
     function label(key,to){const s=api.state(),p=key.split(':'),n=p[1]==='__intro'?s.intro:s.nodes[p[1]],dest=s.nodes[to];const type={auto:'авто',btn:'кнопка',ok:'подтвердить',no:'отменить',target:'выбор контакта'}[p[0]];return `${p[1]} · ${type}${p[0]==='btn'?' «'+(n.buttons[+p[2]].label||'')+'»':''} → ${to}${dest?' · '+(dest.text||dest.title||dest.type).slice(0,45):''}`;}
     function select(key){selected=key;list.value=key||'';remove.disabled=!key;api.draw();info.textContent=key?'Выбрана: '+label(key,api.edges().find(e=>e[0]===key)?.[1]):'';}
     function deleteEdge(){if(!selected)return;const key=selected;api.snapshot();target(api.state(),key,'');selected=null;api.rebuild();api.sync();api.save();viewport.focus({preventScroll:true});info.textContent='Связь удалена. Отмена: Ctrl+Z / Cmd+Z.';}
@@ -142,7 +167,7 @@
       const handle=handleAt(e),endpoint=handle?.matches('[data-reconnect]')?handle:null;
       const port=handle?.matches('.fl-port--out')?handle:null;
       if((endpoint||port)&&!space&&e.button===0){e.preventDefault();capture(e);link={key:endpoint?endpoint.dataset.reconnect:port.dataset.port,start:{...pointer},moved:false};selected=null;info.textContent='Перенесите конец связи на нужную карточку. Escape — отмена.';paintLink();raf=requestAnimationFrame(tick);return;}
-      const hit=e.target.closest('[data-edge]');if(hit&&!space&&!e.shiftKey){e.preventDefault();viewport.focus({preventScroll:true});nodesSelected.clear();paintSelection();const keys=[...new Set(document.elementsFromPoint(e.clientX,e.clientY).filter(el=>el.matches('.edge-hit')).map(el=>el.dataset.edge))].sort();const same=lastHit&&Math.hypot(e.clientX-lastHit.x,e.clientY-lastHit.y)<5&&JSON.stringify(keys)===lastHit.keys;const key=same?keys[(keys.indexOf(selected)+1)%keys.length]:hit.dataset.edge;lastHit={x:e.clientX,y:e.clientY,keys:JSON.stringify(keys)};select(key);capture(e);link={key,start:{...pointer},moved:false};return;}
+      const hit=e.target.closest('[data-edge]');if(hit&&!space&&!e.shiftKey&&e.button===0){e.preventDefault();viewport.focus({preventScroll:true});nodesSelected.clear();paintSelection();const keys=[...new Set(document.elementsFromPoint(e.clientX,e.clientY).filter(el=>el.matches('.edge-hit')).map(el=>el.dataset.edge))].sort();const same=lastHit&&Math.hypot(e.clientX-lastHit.x,e.clientY-lastHit.y)<5&&JSON.stringify(keys)===lastHit.keys;const key=same?keys[(keys.indexOf(selected)+1)%keys.length]:hit.dataset.edge;lastHit={x:e.clientX,y:e.clientY,keys:JSON.stringify(keys)};select(key);capture(e);link={key,start:{...pointer},moved:false};return;}
       if(editable(e)||e.target.closest('button'))return;e.preventDefault();capture(e);const v=api.view(),node=e.target.closest('.fl-node');
       if(node&&!space&&e.button!==1){const id=node.dataset.id;viewport.focus({preventScroll:true});if(e.shiftKey){nodesSelected.has(id)?nodesSelected.delete(id):nodesSelected.add(id);paintSelection();select(null);cancel();return;}if(!nodesSelected.has(id))nodesSelected=new Set([id]);paintSelection();drag={type:'node',id:id,el:node,x:e.clientX,y:e.clientY,positions:[...nodesSelected].map(id=>({id,x:api.pos(id).x,y:api.pos(id).y})),moved:false};}
       else if(space||e.button===1){drag={type:'pan',x:e.clientX,y:e.clientY,px:v.pan.x,py:v.pan.y};viewport.classList.add('is-panning');}
@@ -154,14 +179,73 @@
       else{if(!drag.moved&&Math.hypot(dx,dy)<3)return;if(!drag.moved){drag.moved=true;}const z=api.view().zoom;for(const p of drag.positions){const o=api.pos(p.id),el=layer.querySelector(`[data-id="${p.id}"]`);el.style.left=Math.round(p.x+dx/z)+'px';el.style.top=Math.round(p.y+dy/z)+'px';}api.draw();}
     });
     window.addEventListener('pointerup',e=>{if(captured!==null&&e.pointerId!==captured)return;if(link){const r=bounds(),inside=link.moved&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom,over=inside?linkTarget():null;const key=link.key,moved=link.moved,v=api.view(),point=over?api.inputPos(over.dataset.id,world(local(pointer),v.pan,v.zoom)):null;cancel();if(!moved){if(api.edges().some(e=>e[0]===key))select(key);return;}if(over&&!['meta','intro'].includes(over.dataset.kind)&&point){api.snapshot();target(api.state(),key,over.dataset.id);(api.state()._boardInputSides ||= {})[key]={target:over.dataset.id,side:point.side};api.rebuild();api.sync();api.save();info.textContent='Связь создана.';}else info.textContent='Соединение отменено. Прежняя связь сохранена.';return;}if(drag?.type==='node'&&drag.moved){const end=drag.positions.map(p=>({id:p.id,x:layer.querySelector('[data-id="'+p.id+'"]').offsetLeft,y:layer.querySelector('[data-id="'+p.id+'"]').offsetTop}));const changed=end.some((p,i)=>p.x!==drag.positions[i].x||p.y!==drag.positions[i].y);for(const p of drag.positions){api.pos(p.id).x=p.x;api.pos(p.id).y=p.y;}if(changed){api.snapshot();for(const p of end){api.pos(p.id).x=p.x;api.pos(p.id).y=p.y;}api.save();}drag.moved=false;}cancel();refresh();});
-    window.addEventListener('pointercancel',cancel);window.addEventListener('blur',()=>{space=false;cancel();});
-    viewport.addEventListener('wheel',e=>{if(drag?.type==='node')cancel();const modified=e.ctrlKey||e.altKey||e.metaKey;if(!modified&&editable(e))return;e.preventDefault();const factor=e.deltaMode===1?16:e.deltaMode===2?viewport.clientHeight:1;if(modified||(!e.shiftKey&&e.deltaY))zoom(Math.exp(-e.deltaY*factor*.002),false,local({x:e.clientX,y:e.clientY}));else{const s=api.view();setView({x:s.pan.x-(e.shiftKey&&!e.deltaX?e.deltaY:e.deltaX)*factor,y:s.pan.y},s.zoom);if(link)paintLink();}}, {passive:false});
-    // Chromium/Firefox trackpad pinch arrives as ctrl+wheel; Safari also emits GestureEvent.
-    let gestureZoom=null;
-    viewport.addEventListener('gesturestart',e=>{e.preventDefault();cancel();gestureZoom=api.view().zoom;},{passive:false});
-    viewport.addEventListener('gesturechange',e=>{e.preventDefault();if(gestureZoom===null)gestureZoom=api.view().zoom;const r=bounds(),anchor=Number.isFinite(e.clientX)&&Number.isFinite(e.clientY)?local({x:e.clientX,y:e.clientY}):{x:r.width/2,y:r.height/2};if(Number.isFinite(e.scale)&&e.scale>0)zoom(gestureZoom*e.scale/api.view().zoom,false,anchor);},{passive:false});
-    viewport.addEventListener('gestureend',e=>{e.preventDefault();gestureZoom=null;},{passive:false});
-    window.addEventListener('keydown',e=>{if(drag&&(e.ctrlKey||e.metaKey)&&(e.code==='KeyZ'||e.key.toLowerCase()==='z')){e.preventDefault();e.stopImmediatePropagation();cancel();return;}if(e.key==='Escape'){if(link||drag){e.preventDefault();cancel();info.textContent='Соединение отменено.';}nodesSelected.clear();paintSelection();select(null);return;}if(editable(e)||e.target.closest('dialog')||e.target.closest('.app'))return;
+    // One router owns desktop gestures, including preview dialogs portalled to body.
+    // No mouse/trackpad guessing: plain wheel pans; explicit zoom modifiers zoom.
+    const previewSelector='.app,#shareModal,[data-preview-region]';
+    let wheelOwner=null,wheelAt=0,gesture=null,gestureTimer=0,gestureTail=0,pointerOwner=null;
+    const idle=100; // wheel has no sequence ID: short inactivity boundary, reset by a click.
+    function region(e,modified=false){
+      const target=e.target instanceof Element?e.target:null;if(!target)return null;
+      const preview=target.closest(previewSelector);if(preview)return {kind:'preview',el:preview};
+      if(viewport.contains(target)){
+        const field=target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
+        return field&&!modified?{kind:'field',el:field}:{kind:'board',el:viewport};
+      }
+      return target.closest('#flow,dialog')?{kind:'tools',el:target.closest('#flow,dialog')}:null;
+    }
+    function resetNavigation(){clearTimeout(gestureTimer);gesture=null;gestureTail=0;wheelOwner=null;wheelAt=0;pointerOwner=null;space=false;cancel();}
+    function gestureAnchor(e){
+      const r=bounds();return Number.isFinite(e.clientX)&&Number.isFinite(e.clientY)&&
+        (e.clientX!==0||e.clientY!==0)&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom
+        ?local({x:e.clientX,y:e.clientY}):null;
+    }
+    document.addEventListener('wheel',e=>{
+      if(!document.body.classList.contains('is-editing'))return;
+      const modified=e.ctrlKey||e.metaKey,current=region(e,modified),now=performance.now();
+      if(!current)return;
+      if(pointerOwner&&pointerOwner.kind!=='board'&&current.kind==='board'){e.preventDefault();return;}
+      if(gesture||modified&&now<gestureTail){e.preventDefault();return;}
+      if(!wheelOwner||now-wheelAt>idle||wheelOwner.modified!==modified)wheelOwner={...current,modified};
+      wheelAt=now;
+      // Suppress only the crossing tail; do not transfer it to either camera or scroll area.
+      if(wheelOwner.kind!==current.kind||wheelOwner.el!==current.el){e.preventDefault();return;}
+      if(drag||link){
+        if(current.kind!=='board'){e.preventDefault();return;}
+        cancel(); // Roll back an unfinished card drag before camera navigation.
+      }
+      if(current.kind!=='board'){
+        if(modified)e.preventDefault(); // Local gesture suppression, never browser menu zoom.
+        return; // Native text/select/preview scrolling, contained by CSS.
+      }
+      e.preventDefault();
+      const r=available();if(!r)return;const delta=wheelDelta(e,r);
+      if(modified)zoom(Math.exp(-delta.y*.002),false,gestureAnchor(e));
+      else{const s=api.view();setView({x:s.pan.x-delta.x,y:s.pan.y-delta.y},s.zoom);}
+    },{capture:true,passive:false});
+    function endGesture(){clearTimeout(gestureTimer);gesture=null;gestureTail=performance.now()+80;wheelOwner=null;}
+    function watchGesture(){clearTimeout(gestureTimer);gestureTimer=setTimeout(endGesture,700);}
+    document.addEventListener('gesturestart',e=>{
+      if(!document.body.classList.contains('is-editing'))return;
+      const owner=region(e,true);if(!owner)return;e.preventDefault();cancel();wheelOwner=null;
+      gesture={owner,scale:Number.isFinite(e.scale)&&e.scale>0?e.scale:1,anchor:gestureAnchor(e)};watchGesture();
+    },{capture:true,passive:false});
+    document.addEventListener('gesturechange',e=>{
+      if(!gesture)return;e.preventDefault();watchGesture();
+      if(gesture.owner.kind==='board'&&Number.isFinite(e.scale)&&e.scale>0){
+        // Incremental ratios allow immediate reversal at either zoom limit.
+        const anchor=gestureAnchor(e)||gesture.anchor;gesture.anchor=anchor;
+        zoom(e.scale/gesture.scale,false,anchor);gesture.scale=e.scale;
+      }
+    },{capture:true,passive:false});
+    document.addEventListener('gestureend',e=>{if(gesture){e.preventDefault();endGesture();}},{capture:true,passive:false});
+    document.addEventListener('gesturecancel',e=>{if(gesture){e.preventDefault();resetNavigation();}},{capture:true,passive:false});
+    document.addEventListener('pointerdown',e=>{wheelOwner=null;wheelAt=0;gestureTail=0;pointerOwner=region(e,true);},true);
+    document.addEventListener('pointerup',()=>{pointerOwner=null;},true);
+    window.addEventListener('pointercancel',resetNavigation);
+    viewport.addEventListener('lostpointercapture',()=>{if(captured!==null)resetNavigation();});
+    window.addEventListener('blur',resetNavigation);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)resetNavigation();});
+    window.addEventListener('keydown',e=>{if(drag&&(e.ctrlKey||e.metaKey)&&(e.code==='KeyZ'||e.key.toLowerCase()==='z')){e.preventDefault();e.stopImmediatePropagation();cancel();return;}if(e.key==='Escape'){if(gesture)resetNavigation();if(link||drag){e.preventDefault();cancel();info.textContent='Соединение отменено.';}nodesSelected.clear();paintSelection();select(null);return;}if(editable(e)||e.target.closest('dialog')||e.target.closest(previewSelector)||document.body.classList.contains('view-preview'))return;
       if(e.code==='Space'&&!e.target.closest('button,[role="button"]')){space=true;e.preventDefault();}
       if(e.key==='Delete'||e.key==='Backspace'){if(selected){e.preventDefault();deleteEdge();}else if(nodesSelected.size){e.preventDefault();deleteNodes();}}
     });window.addEventListener('keyup',e=>{if(e.code==='Space')space=false;});
@@ -179,12 +263,13 @@
       });
     });
     const observer=new ResizeObserver(()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{api.draw();refresh();});});
-    new ResizeObserver(()=>{cancel();api.draw();}).observe(viewport);
+    const cameraObserver=new ResizeObserver(()=>{cancel();layout();api.draw();});cameraObserver.observe(viewport);
+    requestAnimationFrame(()=>{for(const el of document.querySelectorAll('.editor-toolbar,.node-palette-inner,.zoom-dock'))cameraObserver.observe(el);layout();});
     new ResizeObserver(()=>{const bars=document.querySelector('.fl-bar').offsetHeight+tools.offsetHeight;document.documentElement.style.setProperty('--author-toolbar-height',bars+'px');}).observe(tools);
     const barObserver=new ResizeObserver(()=>document.documentElement.style.setProperty('--author-toolbar-height',(document.querySelector('.fl-bar').offsetHeight+tools.offsetHeight)+'px'));barObserver.observe(document.querySelector('.fl-bar'));
     function reveal(id){const n=rects().find(r=>r.id===id);if(!n)return;const r=bounds(),z=api.view().zoom,palette=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--node-palette-height'))||60;const available=Math.max(120,r.height-palette-48);setView({x:(r.width-n.w*z)/2-n.x*z,y:Math.max(24,(available-Math.min(n.h*z,available-48))/2)-n.y*z},z);}
-    refresh();return {refresh,fit,apply,repair,cancel,reveal,selected:()=>selected,connecting:()=>link?.key,notice:message=>{info.textContent=message;}};
+    refresh();return {refresh,fit,apply,repair,cancel,reveal,layout,selected:()=>selected,connecting:()=>link?.key,notice:message=>{info.textContent=message;}};
   }
-  return {world,zoomAt,overlaps,place,tidy,target,create,MIN,MAX};
+  return {world,zoomAt,wheelDelta,overlaps,place,tidy,target,create,MIN,MAX};
 });
 

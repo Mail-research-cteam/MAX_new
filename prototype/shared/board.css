@@ -42,3 +42,11 @@ body.is-editing .app{top:0;bottom:0;height:100dvh}
 #flow .fl-node .fl-input-slot[data-side="right"]{left:calc(100% + 2px);top:50%}
 #flow .fl-node .fl-input-slot[data-side="top"]{left:50%;top:-2px}
 #flow .fl-node .fl-input-slot[data-side="bottom"]{left:50%;top:calc(100% + 2px)}
+
+/* Stop native scroll chaining at every preview/field scroll container, including
+   non-overflowing areas at their edge. Never scale the prototype to offset browser zoom. */
+body.is-editing .app,body.is-editing .app *,
+body.is-editing>#shareModal,body.is-editing>#shareModal *,
+body.is-editing [data-preview-region],body.is-editing [data-preview-region] *,
+body.is-editing #flow textarea,body.is-editing #flow select,
+body.is-editing #flow [contenteditable],body.is-editing dialog{overscroll-behavior:contain}

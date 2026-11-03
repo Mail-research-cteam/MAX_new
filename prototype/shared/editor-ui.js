@@ -86,7 +86,6 @@ window.MaxEditorUI={
   install(){
     // Escape preview containment; CSS confines this layer to the bot's rectangle.
     document.body.append(document.getElementById('shareModal'));
-    document.addEventListener('wheel',e=>{if(document.body.classList.contains('is-editing')&&(e.ctrlKey||e.metaKey)&&e.target.closest('.app'))e.preventDefault();},{capture:true,passive:false});
     const bar=document.querySelector('.fl-bar'),flow=document.getElementById('flow');bar.classList.add('editor-toolbar');
     bar.querySelector('b')?.remove();bar.querySelectorAll('.fl-sep,.fl-grow').forEach(el=>el.remove());
     const removed=['Сохранить версию + JSON','Импорт JSON / HTML','Комплект ZIP','Открыть сохранённую версию','Предыдущая сохранённая','Файловая версия'];
@@ -137,9 +136,9 @@ window.MaxEditorUI={
     // Keep the edge picker as an accessible alternative in its contextual dialog, not a persistent toolbar.
     const list=document.getElementById('boardEdgeList'),remove=[...document.querySelectorAll('.board-tools button')].find(b=>b.textContent==='Удалить связь');
     list.hidden=true;remove.hidden=true;
-    const tools=document.querySelector('.board-tools');tools.querySelectorAll('button').forEach(b=>{if(['100%','Вся схема'].includes(b.textContent))b.remove();});
+    const tools=document.querySelector('.board-tools');
     const minus=tools.querySelector('[aria-label="Уменьшить доску"]'),plus=tools.querySelector('[aria-label="Увеличить доску"]');this.iconButton(minus,'minus','Уменьшить доску');this.iconButton(plus,'plus','Увеличить доску');
-    const dock=document.createElement('div');dock.className='zoom-dock';dock.setAttribute('role','group');dock.setAttribute('aria-label','Масштаб доски');dock.append(minus,document.getElementById('boardZoom'),plus);flow.append(dock);
+    const dock=document.createElement('div');dock.className='zoom-dock';dock.setAttribute('role','group');dock.setAttribute('aria-label','Масштаб доски');document.getElementById('boardResetZoom')?.remove();document.getElementById('boardFit')?.remove();dock.append(plus,document.getElementById('boardZoom'),minus);flow.append(dock);
     const info=document.querySelector('.board-info');info.classList.add('editor-sr-only');
     const arrange=document.getElementById('boardArrange');actions.insertBefore(arrange,download);
   }

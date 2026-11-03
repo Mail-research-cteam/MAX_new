@@ -44,7 +44,7 @@ body.is-editing .editor-toolbar{display:flex;align-items:center;gap:12px;flex-wr
 #flow .node-type-group>.node-type-button{border-color:transparent;background:transparent}
 #flow .node-type-group>.node-type-button:hover{border-color:transparent;background:#f5f6f8}
 #flow .node-type-button .editor-icon{width:18px;height:18px}
-#flow .zoom-dock{position:absolute;right:calc(var(--editor-preview-width) + 18px);bottom:18px;z-index:180;display:flex;align-items:center;gap:2px;padding:4px;border:1px solid #dce1e7;border-radius:12px;background:#fff;box-shadow:0 2px 7px #172b4d0a;pointer-events:auto}
+#flow .zoom-dock{position:absolute;right:calc(var(--editor-preview-width) + 18px);bottom:18px;z-index:180;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;border:1px solid #dce1e7;border-radius:12px;background:#fff;box-shadow:0 2px 7px #172b4d0a;pointer-events:auto}
 #flow .zoom-dock .fl-t{border-color:transparent;background:transparent}
 #flow .zoom-dock output{display:block;width:48px;text-align:center;font:500 12px Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#333b47}
 body.view-flow #flow .node-palette{right:16px}
