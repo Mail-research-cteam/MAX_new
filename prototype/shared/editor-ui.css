@@ -248,3 +248,15 @@ body.is-editing.view-preview>#shareModal{top:var(--editor-navigation-height,68px
 #flow #flDownload:hover{background:#f5f6f8;border-color:#b7bec9}
 #flow #flDownload .editor-icon{color:#3166F9}
 @media(prefers-reduced-motion:reduce){.autosave-track,.autosave-track:after{transition:none}}
+
+/* Message forms: 4px within fields, 12px within content, 16px between sections.
+   Header, form and transition share the same 12px horizontal inset. */
+#flow .fl-message-card .fl-head{padding:12px 12px 8px}
+#flow .fl-message-card .fl-body{padding:8px 12px;gap:16px}
+#flow .fl-message-card .fl-content-group{gap:12px}
+#flow .fl-message-card .fl-field{gap:4px}
+#flow .fl-message-card .fl-buttons-group{gap:8px}
+#flow .fl-message-card .fl-buttons-group>.fl-group-label{margin:0 0 -4px}
+#flow .fl-message-card .fl-foot{padding:8px 12px 12px;border-top-width:0}
+
+#flow .fl-buttons-group>.fl-group-label{font-weight:400;color:#626571}

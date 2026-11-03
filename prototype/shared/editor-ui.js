@@ -3,6 +3,7 @@ window.MaxEditorUI={
   organizeCards(layer){
     // Presentation only: preserve inputs, ports and delegated data attributes.
     layer.querySelectorAll('.fl-node').forEach((card,cardIndex)=>{
+      card.classList.toggle('fl-message-card',['bot','user','person_chat'].includes(card.dataset.kind));
       const body=card.querySelector('.fl-body'),items=[...body.children];
       const type=items.find(el=>el.querySelector('[data-type]'));
       const time=items.find(el=>el.querySelector('[data-path$=".time"]'));

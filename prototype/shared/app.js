@@ -797,8 +797,8 @@
       h += '<div class="fl-note">' +
         'Имя, статус и аватар подставляются автоматически из справочника — ' +
         'в самом узле они не заполняются.</div>' +
-        area('Текст отправленного сообщения', 'nodes.' + esc(id) + '.message', S.nodes[id].message, true) +
         MaxMessageMedia.field(id, S.nodes[id].image) +
+        area('Текст отправленного сообщения', 'nodes.' + esc(id) + '.message', S.nodes[id].message, true) +
         fld('Время', 'nodes.' + esc(id) + '.time', S.nodes[id].time);
     } else if (kind === 'payment') {
       var pn = S.nodes[id];
@@ -824,8 +824,8 @@
         fld('Время', 'nodes.' + id + '.time', c.time);
     } else {
       var n = S.nodes[id];
-      h += area(kind === 'user' ? 'Что пишет юзер' : 'Текст сообщения', 'nodes.' + id + '.text', n.text, true);
       if (kind === 'bot' || kind === 'user') h += MaxMessageMedia.field(id, n.image);
+      h += area(kind === 'user' ? 'Что пишет юзер' : 'Текст сообщения', 'nodes.' + id + '.text', n.text, true);
       if (kind === 'bot') {
         h += '<div class="fl-lab">Действия</div>';
         (n.buttons || []).forEach(function (b, i) {

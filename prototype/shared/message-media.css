@@ -1,6 +1,11 @@
 /* Author upload control: scoped to the existing card system. */
-#flow .fl-media-field{margin-top:12px;min-width:0}
+#flow .fl-media-field{margin-top:0;min-width:0}
 #flow .fl-media-drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:72px;padding:12px;border:1px dashed #b9c0cd;border-radius:9px;color:var(--control-muted);background:#fff;font:500 12px/1.4 Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+/* Empty upload and add-action controls share size, icon, spacing and treatment.
+   The loaded image retains its existing column layout and dimensions. */
+#flow .fl-message-card .fl-add,#flow .fl-media-drop:not(:has(.fl-media-thumb)){display:flex;flex-direction:row;align-items:center;justify-content:center;height:36px;min-height:36px;padding:0 12px;gap:8px;border:1px dashed #b9c0cd;border-radius:8px;background:#fff;color:var(--control-muted);box-shadow:none;font:500 12px/1.4 Inter,system-ui,sans-serif}
+#flow .fl-message-card .fl-add svg,#flow .fl-media-drop:not(:has(.fl-media-thumb)) .editor-icon,#flow .fl-media-drop:not(:has(.fl-media-thumb)) .editor-icon svg{width:16px;height:16px;flex:0 0 16px;stroke-width:1.5}
+#flow .fl-message-card .fl-add:hover,#flow .fl-media-drop:not(:has(.fl-media-thumb)):hover{background:#f6f9ff;border-color:#3971ce;color:#235eb3}
 #flow .fl-media-drop:focus-visible{outline:2px solid #3971ce;outline-offset:3px}
 #flow .fl-media-drop.is-dragover{background:#eef5ff;border-color:#3971ce;border-style:solid;color:#235eb3}
 #flow .fl-media-thumb{display:block;width:100%;height:110px;object-fit:contain;border-radius:5px}
