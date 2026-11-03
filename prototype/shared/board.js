@@ -184,13 +184,11 @@
     const previewSelector='.app,#shareModal,[data-preview-region]';
     let wheelOwner=null,wheelAt=0,gesture=null,gestureTimer=0,gestureTail=0,pointerOwner=null;
     const idle=100; // wheel has no sequence ID: short inactivity boundary, reset by a click.
-    function region(e,modified=false){
+    function region(e){
       const target=e.target instanceof Element?e.target:null;if(!target)return null;
       const preview=target.closest(previewSelector);if(preview)return {kind:'preview',el:preview};
-      if(viewport.contains(target)){
-        const field=target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
-        return field&&!modified?{kind:'field',el:field}:{kind:'board',el:viewport};
-      }
+      // Card fields are board content: hovering or focusing one must not trap navigation.
+      if(viewport.contains(target))return {kind:'board',el:viewport};
       return target.closest('#flow,dialog')?{kind:'tools',el:target.closest('#flow,dialog')}:null;
     }
     function resetNavigation(){clearTimeout(gestureTimer);gesture=null;gestureTail=0;wheelOwner=null;wheelAt=0;pointerOwner=null;space=false;cancel();}
@@ -201,7 +199,7 @@
     }
     document.addEventListener('wheel',e=>{
       if(!document.body.classList.contains('is-editing'))return;
-      const modified=e.ctrlKey||e.metaKey,current=region(e,modified),now=performance.now();
+      const modified=e.ctrlKey||e.metaKey,current=region(e),now=performance.now();
       if(!current)return;
       if(pointerOwner&&pointerOwner.kind!=='board'&&current.kind==='board'){e.preventDefault();return;}
       if(gesture||modified&&now<gestureTail){e.preventDefault();return;}
@@ -215,7 +213,7 @@
       }
       if(current.kind!=='board'){
         if(modified)e.preventDefault(); // Local gesture suppression, never browser menu zoom.
-        return; // Native text/select/preview scrolling, contained by CSS.
+        return; // Native preview/tool scrolling, contained by CSS.
       }
       e.preventDefault();
       const r=available();if(!r)return;const delta=wheelDelta(e,r);
@@ -226,7 +224,7 @@
     function watchGesture(){clearTimeout(gestureTimer);gestureTimer=setTimeout(endGesture,700);}
     document.addEventListener('gesturestart',e=>{
       if(!document.body.classList.contains('is-editing'))return;
-      const owner=region(e,true);if(!owner)return;e.preventDefault();cancel();wheelOwner=null;
+      const owner=region(e);if(!owner)return;e.preventDefault();cancel();wheelOwner=null;
       gesture={owner,scale:Number.isFinite(e.scale)&&e.scale>0?e.scale:1,anchor:gestureAnchor(e)};watchGesture();
     },{capture:true,passive:false});
     document.addEventListener('gesturechange',e=>{
@@ -239,7 +237,7 @@
     },{capture:true,passive:false});
     document.addEventListener('gestureend',e=>{if(gesture){e.preventDefault();endGesture();}},{capture:true,passive:false});
     document.addEventListener('gesturecancel',e=>{if(gesture){e.preventDefault();resetNavigation();}},{capture:true,passive:false});
-    document.addEventListener('pointerdown',e=>{wheelOwner=null;wheelAt=0;gestureTail=0;pointerOwner=region(e,true);},true);
+    document.addEventListener('pointerdown',e=>{wheelOwner=null;wheelAt=0;gestureTail=0;pointerOwner=region(e);},true);
     document.addEventListener('pointerup',()=>{pointerOwner=null;},true);
     window.addEventListener('pointercancel',resetNavigation);
     viewport.addEventListener('lostpointercapture',()=>{if(captured!==null)resetNavigation();});

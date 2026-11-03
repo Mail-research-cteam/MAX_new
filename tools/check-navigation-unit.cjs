@@ -10,7 +10,7 @@ class Target{
  addEventListener(type,fn){if(!this.listeners.has(type))this.listeners.set(type,[]);this.listeners.get(type).push(fn);}
  emit(type,options={}){const e={target:this,ctrlKey:false,metaKey:false,altKey:false,shiftKey:false,deltaX:0,deltaY:0,deltaMode:0,clientX:250,clientY:200,defaultPrevented:false,preventDefault(){this.defaultPrevented=true;},...options};for(const fn of this.listeners.get(type)||[])fn(e);return e;}
 }
-const document=new Target(),window=new Target(),flow=new Target(['#flow']),viewport=new Target([],flow),area=new Target(['textarea'],viewport),select=new Target(['select'],viewport),app=new Target(['.app']),modal=new Target(['#shareModal']),previewField=new Target(['input'],app),tool=new Target([],flow);
+const document=new Target(),window=new Target(),flow=new Target(['#flow']),viewport=new Target([],flow),area=new Target(['textarea'],viewport),select=new Target(['select'],viewport),input=new Target(['input'],viewport),editable=new Target(['[contenteditable]:not([contenteditable="false"])'],viewport),app=new Target(['.app']),modal=new Target(['#shareModal']),previewField=new Target(['input'],app),tool=new Target([],flow);
 let editing=true,time=1000,timers=new Map(),timer=0;
 document.body={classList:{contains:()=>editing}};
 let view={pan:{x:40,y:20},zoom:1},cancels=0;
@@ -28,15 +28,16 @@ for(const z of [.08,.25,1,2.5])for(const mode of [0,1,2]){
 }
 for(const [event,expected]of [[{deltaY:20},{x:40,y:0}],[{deltaX:20},{x:20,y:20}],[{shiftKey:true,deltaY:20},{x:20,y:20}],[{shiftKey:true,deltaX:20,deltaY:20},{x:20,y:20}],[{altKey:true,deltaY:20},{x:40,y:0}]]){reset();wheel(viewport,event);assert.deepEqual(view.pan,expected);assert.equal(view.zoom,1);}
 console.log('PASS router: both pan axes, diagonal, Shift without double delta, Alt, all deltaMode units at four scales');
-for(const target of [viewport,area,select])for(const mod of ['ctrlKey','metaKey']){
+for(const target of [viewport,area,select,input,editable])for(const mod of ['ctrlKey','metaKey']){
  reset();const b=before(),point={x:150,y:150},world=board.world(point,b.pan,b.zoom);
  assert(wheel(target,{[mod]:true,deltaY:-91}).defaultPrevented);assert(view.zoom>1);const after=board.world(point,view.pan,view.zoom);assert(Math.abs(world.x-after.x)<1e-9&&Math.abs(world.y-after.y)<1e-9);
 }
-for(const target of [app,previewField,modal,tool,area,select]){
+for(const target of [app,previewField,modal,tool]){
  reset();const b=before();assert.equal(wheel(target,{deltaY:90}).defaultPrevented,false);assert.deepEqual(view,b);
- if(target!==area&&target!==select){pause();assert(wheel(target,{ctrlKey:true,deltaY:-90}).defaultPrevented);assert.deepEqual(view,b);}
+ pause();assert(wheel(target,{ctrlKey:true,deltaY:-90}).defaultPrevented);assert.deepEqual(view,b);
 }
-console.log('PASS router: explicit zoom over board fields; native field/select/preview scroll and portalled preview zoom suppression');
+for(const target of [area,select,input,editable]){reset();const b=before();assert(wheel(target,{deltaX:12,deltaY:34}).defaultPrevented);assert.deepEqual(view,{pan:{x:b.pan.x-12,y:b.pan.y-34},zoom:b.zoom});wheel(viewport,{deltaY:10});wheel(target,{deltaY:10});assert.equal(view.pan.y,b.pan.y-54,'no ownership trap between card fields and board');}
+console.log('PASS router: pan and zoom over all card fields, uninterrupted field/board crossing; preview scroll and zoom isolation');
 reset();wheel(app,{deltaY:90});const b=before();assert(wheel(viewport,{deltaY:90}).defaultPrevented);assert.deepEqual(view,b);pause();wheel(viewport,{deltaY:90});assert.equal(view.pan.y,b.pan.y-90);
 reset();wheel(viewport,{deltaY:90});assert(wheel(app,{deltaY:90}).defaultPrevented);document.emit('pointerdown',{target:app});assert.equal(wheel(app,{deltaY:90}).defaultPrevented,false);document.emit('pointerup');
 reset();document.emit('pointerdown',{target:app});assert(wheel(viewport,{deltaY:90}).defaultPrevented);assert.deepEqual(view,{pan:{x:40,y:20},zoom:1});document.emit('pointerup');

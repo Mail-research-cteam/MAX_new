@@ -15,8 +15,8 @@ try{
  const previewBefore=await p.locator('.app').boundingBox();let t=await transform();await wheel(80,120);let next=await transform();assert.equal(next.z,t.z);assert(Math.abs(next.x-(t.x-80))<.01);assert(Math.abs(next.y-(t.y-120))<.01);await wheel(0,-200,true);next=await transform();assert(next.z>t.z);assert.deepEqual(await p.locator('.app').boundingBox(),previewBefore);console.log('PASS board pan/zoom isolated from preview');
  const browserZoom=await p.locator('#flView').evaluate(el=>{const e=new WheelEvent('wheel',{ctrlKey:true,cancelable:true,bubbles:true,deltaY:10});el.dispatchEvent(e);return e.defaultPrevented;});assert.equal(browserZoom,true);
  await ui.zoomTo(1);assert.equal((await transform()).z,1);
- // Scroll text without moving or zooming the board.
- const area=p.locator('[data-path="nodes.greet.text"]');await area.fill(('Описание настройки совместного доступа и подтверждения участника.\n').repeat(32));t=await transform();await area.evaluate(el=>{el.scrollTop=0;el.dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:90}));});assert.deepEqual(await transform(),t);
+ // Wheel over card text pans the board without zooming or editing text.
+ const area=p.locator('[data-path="nodes.greet.text"]');await area.fill(('Описание настройки совместного доступа и подтверждения участника.\n').repeat(32));t=await transform();await area.evaluate(el=>{el.scrollTop=0;el.dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:90}));});next=await transform();assert.equal(next.z,t.z);assert.equal(next.x,t.x);assert.equal(next.y,t.y-90);
  // Keyboard connection remains available at every scale, including a remote target.
  const port=p.locator('[data-port="auto:__intro"]');await port.focus();await p.keyboard.press('Enter');await p.locator('dialog select').selectOption('participant_actions_maxim_reset_done');await p.getByRole('button',{name:'Применить',exact:true}).click();assert.equal((await state()).intro.auto,'participant_actions_maxim_reset_done');console.log('PASS remote keyboard connection');
  // All real exit kinds, with exact deletion, draft persistence, and undo.
