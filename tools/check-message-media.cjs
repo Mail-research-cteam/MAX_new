@@ -34,10 +34,12 @@ const strip=s=>{const copy=structuredClone(s);for(const n of Object.values(copy.
  await p.locator('.message-image').first().click();assert(await viewer.isVisible());assert.equal(await viewer.locator('.message-image-viewer__count').textContent(),'1 из 1');
  const v=await viewer.boundingBox(),a=await preview.boundingBox();assert(v.x>=a.x&&v.x+v.width<=a.x+a.width+1);assert.equal(await p.locator('#flow').evaluate(e=>e.inert),false);
  for(let i=0;i<2;i++){
-  for(const label of ['Перейти к сообщению','Скачать изображение']){await viewer.getByRole('button',{name:label,exact:true}).click();assert(await boundary.isVisible());await boundary.getByRole('button',{name:'Вернуться назад'}).click();assert(await viewer.isVisible());assert(!await viewer.evaluate(e=>e.inert));}
-  await viewer.getByRole('button',{name:'Закрыть изображение'}).click();assert(!await viewer.isVisible());assert(await p.locator('.message-image').first().evaluate(e=>e===document.activeElement));if(!i)await p.locator('.message-image').first().click();
+  await viewer.getByRole('button',{name:'Скачать изображение',exact:true}).click();assert(await boundary.isVisible());await boundary.getByRole('button',{name:'Вернуться назад'}).click();assert(await viewer.isVisible());assert(!await viewer.evaluate(e=>e.inert));
+  const beforeJump=await state(),camera=await p.locator('#flLayer').getAttribute('style');
+  await viewer.getByRole('button',{name:'Перейти к сообщению',exact:true}).click();assert(!await viewer.isVisible());assert(!await boundary.isVisible());assert.deepEqual(await state(),beforeJump);assert.equal(await p.locator('#flLayer').getAttribute('style'),camera);assert(await p.locator('.message-image').first().evaluate(el=>{const r=el.getBoundingClientRect(),f=el.closest('.chat-scroll').getBoundingClientRect();return el===document.activeElement&&r.bottom>f.top&&r.top<f.bottom;}));
+  await p.locator('.message-image').first().click();await viewer.getByRole('button',{name:'Закрыть изображение'}).click();assert(!await viewer.isVisible());assert(await p.locator('.message-image').first().evaluate(e=>e===document.activeElement));if(!i)await p.locator('.message-image').first().click();
  }
- console.log('PASS viewer close and repeated boundary return');
+ console.log('PASS viewer return to live message without boundary, camera/data changes; close and download boundary unchanged');
  // Outgoing image in the bot conversation remains clickable.
  await p.getByRole('button',{name:'Далее',exact:true}).click();assert.equal(await p.locator('.chat-scroll .message-image').count(),2);await p.locator('.chat-scroll .message-image').last().click();assert((await viewer.textContent()).includes('Вы'));await viewer.getByRole('button',{name:'Закрыть изображение'}).click();
  // Export uses the real author ZIP path, with a deliberately isolated scenario fixture.

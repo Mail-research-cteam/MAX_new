@@ -63,19 +63,29 @@ window.MaxMessageMedia=(()=>{
   api.layer.addEventListener('click',e=>{const remove=e.target.closest('[data-media-remove]');if(!remove)return;const id=remove.dataset.mediaRemove;requests.delete(id);try{api.commit(id,null);}catch(err){error(remove.closest('.fl-media-field'),err.message);}});
  }
  function installViewer(api){
-  const host=document.querySelector('.app'),viewer=document.createElement('section');let opener,blocked=[];
+  const host=document.querySelector('.app'),viewer=document.createElement('section');let opener,messageId,blocked=[];
   viewer.className='message-image-viewer';viewer.hidden=true;viewer.setAttribute('role','dialog');viewer.setAttribute('aria-modal','true');viewer.setAttribute('aria-label','Просмотр изображения');host.append(viewer);
   const asset=(name,section)=>{const path='assets/message-media/'+section+'/'+name+'.svg';return window.MaxStandalone?window.MaxStandalone.asset(path):path;};
   const icon=(desktop,mobile)=>'<span class="message-image-viewer__icon"><img class="media-desktop-icon" src="'+asset(desktop,'desktop')+'" alt="" width="24" height="24"><img class="media-mobile-icon" src="'+asset(mobile,'mobile')+'" alt="" width="24" height="24"></span>';
   function close(){if(viewer.hidden)return;viewer.hidden=true;viewer.replaceChildren();blocked.forEach(el=>{el.inert=false;});blocked=[];if(opener?.isConnected)opener.focus({preventScroll:true});}
+  function jumpToMessage(){
+   // The feed may have been rebuilt while the viewer was open. Resolve the live message.
+   const target=opener?.isConnected?opener:[...api.feed.querySelectorAll('[data-message-image]')].find(el=>el.dataset.messageImage===messageId);
+   close();
+   if(!target?.isConnected)return;
+   const bounds=api.feed.getBoundingClientRect(),rect=target.getBoundingClientRect();
+   // Scroll only the chat feed; scrollIntoView could also move editor/document ancestors.
+   api.feed.scrollTop+=rect.top-bounds.top-(api.feed.clientHeight-rect.height)/2;
+   target.focus({preventScroll:true});
+  }
   api.feed.addEventListener('click',e=>{
    const target=e.target.closest('[data-message-image]');if(!target)return;const node=api.getNode(target.dataset.messageImage);if(!valid(node?.image))return;
    const images=[...api.feed.querySelectorAll('[data-message-image]')],author=api.author(node),index=images.indexOf(target)+1;
-   opener=target;blocked=[...host.children].filter(el=>el!==viewer&&!el.inert);blocked.forEach(el=>{el.inert=true;});
-   viewer.innerHTML='<div class="message-image-viewer__top"><span class="message-image-viewer__count">'+index+' из '+images.length+'</span><button class="message-image-viewer__close" type="button" aria-label="Закрыть изображение">'+icon('1f506','d2c6d')+'</button></div><div class="message-image-viewer__stage"><img src="'+esc(node.image.src)+'" alt="Изображение из сообщения" width="'+node.image.width+'" height="'+node.image.height+'"></div><div class="message-image-viewer__bar"><div class="message-image-viewer__author">'+(author.avatar?'<img class="message-image-viewer__avatar" src="'+esc(author.avatar)+'" alt="">':'')+'<div><strong>'+esc(author.name)+'</strong><span>'+esc(author.date+(node.time?' в '+node.time:''))+'</span></div></div><div class="message-image-viewer__actions"><button type="button" data-image-boundary aria-label="Перейти к сообщению"><span>Перейти к сообщению</span>'+icon('61f7b','b8e47')+'</button><button type="button" data-image-boundary aria-label="Скачать изображение"><span>Скачать</span>'+icon('8f3ca','bfeb7')+'</button></div></div>';
+   opener=target;messageId=target.dataset.messageImage;blocked=[...host.children].filter(el=>el!==viewer&&!el.inert);blocked.forEach(el=>{el.inert=true;});
+   viewer.innerHTML='<div class="message-image-viewer__top"><span class="message-image-viewer__count">'+index+' из '+images.length+'</span><button class="message-image-viewer__close" type="button" aria-label="Закрыть изображение">'+icon('1f506','d2c6d')+'</button></div><div class="message-image-viewer__stage"><img src="'+esc(node.image.src)+'" alt="Изображение из сообщения" width="'+node.image.width+'" height="'+node.image.height+'"></div><div class="message-image-viewer__bar"><div class="message-image-viewer__author">'+(author.avatar?'<img class="message-image-viewer__avatar" src="'+esc(author.avatar)+'" alt="">':'')+'<div><strong>'+esc(author.name)+'</strong><span>'+esc(author.date+(node.time?' в '+node.time:''))+'</span></div></div><div class="message-image-viewer__actions"><button type="button" data-image-message aria-label="Перейти к сообщению"><span>Перейти к сообщению</span>'+icon('61f7b','b8e47')+'</button><button type="button" data-image-boundary aria-label="Скачать изображение"><span>Скачать</span>'+icon('8f3ca','bfeb7')+'</button></div></div>';
    viewer.inert=false;viewer.hidden=false;viewer.querySelector('.message-image-viewer__close').focus({preventScroll:true});
   });
-  viewer.addEventListener('click',e=>{if(e.target.closest('.message-image-viewer__close'))close();else if(e.target.closest('[data-image-boundary]'))MaxBoundary.open(e.target.closest('button'));});
+  viewer.addEventListener('click',e=>{if(e.target.closest('.message-image-viewer__close'))close();else if(e.target.closest('[data-image-message]'))jumpToMessage();else if(e.target.closest('[data-image-boundary]'))MaxBoundary.open(e.target.closest('button'));});
   document.addEventListener('keydown',e=>{
    if(viewer.hidden||document.querySelector('.prototype-boundary:not([hidden])'))return;
    if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();close();}

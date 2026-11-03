@@ -233,6 +233,7 @@ p{margin:0}
    Мобильная (база): одна колонка. Десктоп: рельс + список + чат.
    ══════════════════════════════════════════════════════════════════════════ */
 .app{
+  position:relative;
   display:flex;
   height:100dvh;
   overflow:hidden;
@@ -1051,7 +1052,7 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
    поэтому положение над клавиатурным баром — решение по платформенной норме).
    ══════════════════════════════════════════════════════════════════════════ */
 .toast{
-  position:fixed;z-index:90;
+  position:absolute;z-index:90;
   left:var(--sp-m);right:var(--sp-m);bottom:76px;
   display:flex;align-items:center;
   min-height:56px;padding:var(--sp-m);
@@ -1083,7 +1084,7 @@ body.is-editing.view-split #flow .fl-viewport{right:400px}
 }
 .toast-sub:empty{display:none}
 @container app (min-width:768px){
-  .toast{left:var(--sp-m);right:auto;bottom:var(--sp-m);width:369px;max-width:calc(100%% - 24px)}
+  .toast{left:var(--sp-m);right:auto;bottom:var(--sp-m);width:369px;max-width:calc(100% - 24px)}
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

@@ -15,6 +15,14 @@ const near=(a,b,message)=>assert(Math.abs(a-b)<.01,message+': '+a+' vs '+b);
   const camera=()=>p.evaluate(()=>{const {pan,zoom}=__navigation.api.view();return {x:pan.x,y:pan.y,z:zoom};});
   const state=()=>p.evaluate(()=>({data:JSON.stringify(__navigation.api.state()),snapshots:__navigation.snapshots,saves:__navigation.saves,storage:JSON.stringify({...localStorage})}));
   const baseline=await state();
+  // The toast uses preview coordinates even when the board occupies most of the window.
+  for(const width of [1600,800]){
+   await p.setViewportSize({width,height:1000});await p.waitForTimeout(100);
+   const toast=await p.locator('#toast').evaluate(el=>{el.classList.add('is-open');document.getElementById('toastTitle').textContent='Тестовое уведомление';const r=el.getBoundingClientRect(),a=el.closest('.app').getBoundingClientRect(),style=getComputedStyle(el);return {left:r.left,right:r.right,width:r.width,appLeft:a.left,appRight:a.right,appWidth:a.width,inset:parseFloat(style.left)};});
+   near(toast.left,toast.appLeft+toast.inset,'toast local left');near(toast.width,toast.appWidth-2*toast.inset,'mobile toast fills preview');assert(toast.left>=toast.appLeft&&toast.right<=toast.appRight+.01);
+  }
+  await p.locator('#toast').evaluate(el=>el.classList.remove('is-open'));await p.setViewportSize({width:1600,height:1000});await p.waitForTimeout(100);
+
   assert.equal(await p.locator('#boardResetZoom,#boardFit').count(),0);
   const dockOrder=await p.locator('.zoom-dock').evaluate(el=>[...el.children].map(child=>({label:child.getAttribute('aria-label'),y:child.getBoundingClientRect().y})));
   assert.deepEqual(dockOrder.map(item=>item.label),['Увеличить доску','Масштаб доски','Уменьшить доску']);assert(dockOrder[0].y<dockOrder[1].y&&dockOrder[1].y<dockOrder[2].y);
